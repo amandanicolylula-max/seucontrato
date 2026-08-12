@@ -1,0 +1,50 @@
+[functions]
+  node_bundler = "esbuild"
+
+[functions."extract-contract"]
+  timeout = 60
+
+[functions."create-user"]
+  timeout = 15
+
+[functions."daily-digest"]
+  timeout = 30
+
+[functions."analyze-contract-background"]
+  timeout = 300
+
+[functions."analyze-problem-background"]
+  timeout = 120
+
+# Background Function — rota explícita ANTES do catch-all /api/*
+[[redirects]]
+  from = "/api/extract-contract-bg"
+  to = "/.netlify/functions/extract-contract-background"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/analyze-contract"
+  to = "/.netlify/functions/analyze-contract-background"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/analyze-problem"
+  to = "/.netlify/functions/analyze-problem-background"
+  status = 200
+  force = true
+
+# Rotas /api/* devem ir para as Netlify Functions — NÃO para o SPA.
+# Esta regra deve vir ANTES do catch-all abaixo.
+[[redirects]]
+  from = "/api/*"
+  to = "/api/:splat"
+  status = 200
+  force = true
+
+# SPA fallback: todas as outras rotas servem index.html (React Router)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
