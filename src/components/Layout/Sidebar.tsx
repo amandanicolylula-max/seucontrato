@@ -51,12 +51,12 @@ export function Sidebar({ open, onClose, onOpen }: SidebarProps) {
       {/* Logo */}
       <div className="px-6 py-6 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-white/15 rounded-lg flex items-center justify-center">
-            <FileText className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 bg-accent/20 rounded-lg flex items-center justify-center">
+            <FileText className="w-5 h-5 text-accent" />
           </div>
           <div>
-            <p className="font-display text-white text-lg leading-none">BD Contratos</p>
-            <p className="text-white/50 text-xs mt-0.5">Braga & Dantas</p>
+            <p className="font-display text-white text-lg leading-none font-bold">Seu Contrato</p>
+            <p className="text-accent/70 text-xs mt-0.5">Gestão Contratual</p>
           </div>
         </div>
       </div>

@@ -242,7 +242,7 @@ export default function ContractAnalysisDetail() {
     const clientEmail = (analysis.clients as Client & { email?: string })?.email || ''
     const subject = encodeURIComponent(`Parecer Contratual — ${analysis.title}`)
     const body = encodeURIComponent(
-      `Prezado(a),\n\nSegue em anexo o parecer contratual elaborado pelo escritório Braga & Dantas Advogados referente a: ${analysis.title}.\n\nAtenciosamente,\nBraga & Dantas Advogados\n(84) 3234-6912 | www.bragadantas.com.br`
+      `Prezado(a),\n\nSegue em anexo o parecer contratual referente a: ${analysis.title}.\n\nAtenciosamente,\nSeu Contrato`
     )
     return `https://mail.google.com/mail/?view=cm&to=${clientEmail}&su=${subject}&body=${body}`
   }

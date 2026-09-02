@@ -27,7 +27,7 @@ export default function Login() {
   }
 
   const handleForgot = () => {
-    toast('Entre em contato com o administrador do sistema.', { icon: '🔒' })
+    toast('Entre em contato com o administrador do sistema.', { icon: '\u{1F512}' })
   }
 
   return (
@@ -39,7 +39,7 @@ export default function Login() {
         height: '100vh',
         width: '100vw',
         overflow: 'hidden',
-        backgroundColor: '#0A0C0F',
+        backgroundColor: '#0A0814',
       }}
     >
       {/* ── LEFT PANEL ─────────────────────────────────────────────── */}
@@ -72,37 +72,45 @@ export default function Login() {
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.75) 100%)',
+            background: 'linear-gradient(to bottom, rgba(30,26,52,0.3) 0%, rgba(10,8,20,0.85) 100%)',
           }}
         />
 
         {/* Logo — top-left */}
         <div style={{ position: 'absolute', top: 28, left: 28 }}>
-          <img
-            src="/logo.png"
-            alt="Braga e Dantas Advogados"
-            style={{ height: 36, width: 'auto', objectFit: 'contain', display: 'block' }}
-          />
+          <span
+            style={{
+              fontFamily: 'Montserrat, sans-serif',
+              fontSize: 20,
+              fontWeight: 800,
+              color: '#ffffff',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            <span style={{ color: '#ffffff' }}>SEU</span>
+            <span style={{ color: '#00A499' }}>CONTRATO</span>
+          </span>
         </div>
 
         {/* Bottom branding copy */}
         <div style={{ position: 'absolute', bottom: 44, left: 44 }}>
           <p
             style={{
-              fontFamily: '"DM Sans", sans-serif',
+              fontFamily: 'Montserrat, sans-serif',
               fontSize: 10,
               letterSpacing: '0.22em',
-              color: '#B7A5A2',
+              color: '#00A499',
               textTransform: 'uppercase',
               opacity: 0.9,
               margin: '0 0 7px 0',
+              fontWeight: 600,
             }}
           >
-            Braga e Dantas
+            Gestão Contratual Inteligente
           </p>
           <p
             style={{
-              fontFamily: '"Playfair Display", "DM Serif Display", Georgia, serif',
+              fontFamily: 'Montserrat, sans-serif',
               fontSize: 30,
               fontWeight: 700,
               color: '#F0EDE8',
@@ -110,11 +118,11 @@ export default function Login() {
               margin: '0 0 9px 0',
             }}
           >
-            BD Contratos
+            Seu Contrato
           </p>
           <p
             style={{
-              fontFamily: '"DM Sans", sans-serif',
+              fontFamily: 'Montserrat, sans-serif',
               fontSize: 12,
               color: 'rgba(240,237,232,0.62)',
               letterSpacing: '0.05em',
@@ -130,7 +138,7 @@ export default function Login() {
       <div
         className="login-divider-v"
         aria-hidden="true"
-        style={{ width: 1, backgroundColor: '#1A1D22', flexShrink: 0 }}
+        style={{ width: 1, backgroundColor: '#262050', flexShrink: 0 }}
       />
 
       {/* ── RIGHT PANEL ────────────────────────────────────────────── */}
@@ -138,7 +146,7 @@ export default function Login() {
         className="login-right-panel"
         style={{
           flex: '0 0 42%',
-          background: 'linear-gradient(to right, #060E1C 0%, #0D1F3C 70%, #142F58 100%)',
+          background: 'linear-gradient(to right, #0D0B1E 0%, #1E1A34 70%, #262050 100%)',
           position: 'relative',
           display: 'flex',
           alignItems: 'center',
@@ -152,7 +160,7 @@ export default function Login() {
           <h1
             className="login-item-animate"
             style={{
-              fontFamily: '"Playfair Display", "DM Serif Display", Georgia, serif',
+              fontFamily: 'Montserrat, sans-serif',
               fontSize: 23,
               fontWeight: 700,
               color: '#F0EDE8',
@@ -168,7 +176,7 @@ export default function Login() {
           <p
             className="login-item-animate"
             style={{
-              fontFamily: '"DM Sans", sans-serif',
+              fontFamily: 'Montserrat, sans-serif',
               fontSize: 12,
               color: '#9DA8B8',
               margin: '0 0 30px 0',
@@ -188,12 +196,13 @@ export default function Login() {
                 htmlFor="login-email"
                 style={{
                   display: 'block',
-                  fontFamily: '"DM Sans", sans-serif',
+                  fontFamily: 'Montserrat, sans-serif',
                   fontSize: 10,
                   color: '#8B96A5',
                   letterSpacing: '0.09em',
                   textTransform: 'uppercase',
                   marginBottom: 7,
+                  fontWeight: 500,
                 }}
               >
                 E-mail
@@ -219,12 +228,13 @@ export default function Login() {
                 htmlFor="login-password"
                 style={{
                   display: 'block',
-                  fontFamily: '"DM Sans", sans-serif',
+                  fontFamily: 'Montserrat, sans-serif',
                   fontSize: 10,
                   color: '#8B96A5',
                   letterSpacing: '0.09em',
                   textTransform: 'uppercase',
                   marginBottom: 7,
+                  fontWeight: 500,
                 }}
               >
                 Senha
@@ -277,7 +287,7 @@ export default function Login() {
               style={{ animationDelay: '360ms' }}
             >
               <button type="submit" className="login-btn" disabled={loading}>
-                {loading ? 'Entrando...' : 'Entrar →'}
+                {loading ? 'Entrando...' : 'Entrar'}
               </button>
             </div>
           </form>
@@ -291,14 +301,14 @@ export default function Login() {
             left: 0,
             right: 0,
             textAlign: 'center',
-            fontFamily: '"DM Sans", sans-serif',
+            fontFamily: 'Montserrat, sans-serif',
             fontSize: 10,
             color: '#5A6475',
             margin: 0,
             userSelect: 'none',
           }}
         >
-          BD Contratos © 2025 · Braga e Dantas Advogados
+          Seu Contrato © {new Date().getFullYear()}
         </p>
       </div>
     </div>

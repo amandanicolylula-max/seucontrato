@@ -99,7 +99,7 @@ export default function Alerts() {
     const tipoEvento = alertTypeMap[alert.alert_type] || 'Prazo Contratual'
     const antecedencia = alert.days_before ? `\n▸ Aviso com: ${alert.days_before} dias de antecedência` : ''
     const marco = alert.contract_milestones?.title ? `\n▸ Marco contratual: ${alert.contract_milestones.title}` : ''
-    const subject = `Braga e Dantas | Aviso de Prazo — ${contractTitle}`
+    const subject = `Seu Contrato | Aviso de Prazo — ${contractTitle}`
     const body = `Prezado(a) ${clientName},
 
 Espero que esteja bem. Entramos em contato para informar sobre um prazo contratual que requer sua atenção.
@@ -113,7 +113,7 @@ Solicitamos, respeitosamente, que V.Sa. tome as providências necessárias antes
 Caso tenha dúvidas ou necessite de orientação jurídica, nossa equipe está à disposição.
 
 Atenciosamente,
-Braga e Dantas Advogados`
+Seu Contrato`
     return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(clientEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 

@@ -104,7 +104,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Toaster position="top-right" toastOptions={{ style: { fontFamily: 'DM Sans, sans-serif', fontSize: '14px' } }} />
+        <Toaster position="top-right" toastOptions={{ style: { fontFamily: 'Montserrat, sans-serif', fontSize: '14px' } }} />
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>

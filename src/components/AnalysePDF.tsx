@@ -204,9 +204,9 @@ export function AnalysePDF({ title, clientName, sections }: AnalysePDFProps) {
   return (
     <Document
       title={title}
-      author="Braga e Dantas Advogados"
+      author="Seu Contrato"
       subject="Parecer Contratual"
-      creator="BD Contratos"
+      creator="Seu Contrato"
     >
       {/* ── Página 1: metadados + primeiras seções ── */}
       <Page size="A4" style={styles.page}>

@@ -47,7 +47,7 @@ function buildHistoricalContext(
 // ─── Prompt ───────────────────────────────────────────────────────────────────
 
 function buildPrompt(userContext?: string, historicalProblems?: string): string {
-  return `Você é um advogado especialista em direito contratual brasileiro a serviço do escritório Braga & Dantas Advogados. Produza um parecer jurídico profissional e detalhado em português brasileiro.
+  return `Você é um advogado especialista em direito contratual brasileiro. Produza um parecer jurídico profissional e detalhado em português brasileiro.
 
 ${userContext ? `CONTEXTO FORNECIDO PELO USUÁRIO:\n${userContext}\n` : ""}
 ${historicalProblems ? `${historicalProblems}\n` : ""}

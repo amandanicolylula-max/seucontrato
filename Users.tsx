@@ -34,8 +34,8 @@ export function Sidebar() {
             <FileText className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="font-display text-white text-lg leading-none">BD Contratos</p>
-            <p className="text-white/50 text-xs mt-0.5">Braga & Dantas</p>
+            <p className="font-display text-white text-lg leading-none font-bold">Seu Contrato</p>
+            <p className="text-accent/70 text-xs mt-0.5">Gestão Contratual</p>
           </div>
         </div>
       </div>

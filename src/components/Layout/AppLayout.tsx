@@ -28,7 +28,7 @@ export function AppLayout() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <span className="font-display text-navy-800 font-semibold">BD Contratos</span>
+          <span className="font-display text-navy-800 font-semibold">Seu Contrato</span>
         </div>
         <div className="p-4 md:p-8">
           <Outlet />

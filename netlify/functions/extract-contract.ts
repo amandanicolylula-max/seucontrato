@@ -120,7 +120,7 @@ export default async (req: Request) => {
             },
             {
               type: "text",
-              text: `Você é um especialista em direito contratual brasileiro a serviço do escritório Braga & Dantas Advogados. Analise o contrato PDF e retorne EXCLUSIVAMENTE um objeto JSON válido — sem markdown, sem blocos de código, sem texto antes ou depois.
+              text: `Você é um especialista em direito contratual brasileiro. Analise o contrato PDF e retorne EXCLUSIVAMENTE um objeto JSON válido — sem markdown, sem blocos de código, sem texto antes ou depois.
 
 REGRAS OBRIGATÓRIAS:
 - Datas: SEMPRE em formato YYYY-MM-DD (ex: "15 de março de 2024" → "2024-03-15", "15/03/2024" → "2024-03-15")
@@ -129,8 +129,8 @@ REGRAS OBRIGATÓRIAS:
 - Campo ausente no contrato: retorne null — NUNCA invente informações
 - Booleanos: true ou false com base no que está EXPLÍCITO no contrato
 
-SOBRE NOSSO CLIENTE:
-O escritório Braga & Dantas representa uma das partes. Assuma que nosso cliente é a parte CONTRATANTE, salvo se o contexto indicar claramente o contrário. Todas as análises de risco e oportunidade devem considerar o impacto sobre nosso cliente.
+SOBRE O CONTRATANTE:
+Assuma que o usuário da plataforma é a parte CONTRATANTE, salvo se o contexto indicar claramente o contrário. Todas as análises de risco e oportunidade devem considerar o impacto sobre o contratante.
 
 Retorne este JSON:
 {

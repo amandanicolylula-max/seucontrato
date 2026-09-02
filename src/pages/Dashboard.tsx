@@ -93,7 +93,7 @@ export default function Dashboard() {
                 <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px' }} />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                  {chartData.map((_, i) => <Cell key={i} fill={i === 0 ? '#1B3A6B' : i === 1 ? '#2352A0' : '#94a3b8'} />)}
+                  {chartData.map((_, i) => <Cell key={i} fill={i === 0 ? '#1E1A34' : i === 1 ? '#00A499' : '#94a3b8'} />)}
                   <LabelList dataKey="value" position="top" style={{ fontSize: '12px', fill: '#64748b', fontWeight: 600 }} />
                 </Bar>
               </BarChart>

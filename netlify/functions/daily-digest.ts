@@ -52,9 +52,9 @@ function buildHtml(fullName: string, overdue: AlertRow[], upcoming: AlertRow[]):
     <tr><td align="center">
       <table width="580" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
 
-        <tr><td style="background:linear-gradient(135deg,#0D1F3C 0%,#142F58 100%);padding:28px 32px;">
-          <p style="margin:0;font-size:10px;font-weight:700;color:#B7A5A2;letter-spacing:2.5px;text-transform:uppercase;">BRAGA E DANTAS ADVOGADOS</p>
-          <p style="margin:6px 0 0;font-size:22px;font-weight:700;color:#ffffff;">BD Contratos</p>
+        <tr><td style="background:linear-gradient(135deg,#131024 0%,#1E1A34 100%);padding:28px 32px;">
+          <p style="margin:0;font-size:10px;font-weight:700;color:#00A499;letter-spacing:2.5px;text-transform:uppercase;">GESTÃO CONTRATUAL INTELIGENTE</p>
+          <p style="margin:6px 0 0;font-size:22px;font-weight:700;color:#ffffff;">Seu Contrato</p>
           <p style="margin:4px 0 0;font-size:12px;color:rgba(255,255,255,.55);">Resumo diário de alertas</p>
         </td></tr>
 
@@ -64,15 +64,15 @@ function buildHtml(fullName: string, overdue: AlertRow[], upcoming: AlertRow[]):
           ${overdueSection}
           ${upcomingSection}
           <div style="margin-top:28px;padding-top:20px;border-top:1px solid #f1f5f9;text-align:center;">
-            <a href="https://contratos.bragadantas.com.br/alertas"
-               style="display:inline-block;background:#142F58;color:#ffffff;text-decoration:none;padding:11px 28px;border-radius:8px;font-size:13px;font-weight:600;">
+            <a href="https://seucontrato.netlify.app/alertas"
+               style="display:inline-block;background:#1E1A34;color:#ffffff;text-decoration:none;padding:11px 28px;border-radius:8px;font-size:13px;font-weight:600;">
               Ver todos os alertas →
             </a>
           </div>
         </td></tr>
 
         <tr><td style="padding:14px 32px;background:#f8fafc;border-top:1px solid #f1f5f9;">
-          <p style="margin:0;font-size:11px;color:#94a3b8;text-align:center;">BD Contratos · Braga e Dantas Advogados · Este email é enviado automaticamente às 7h</p>
+          <p style="margin:0;font-size:11px;color:#94a3b8;text-align:center;">Seu Contrato · Este email é enviado automaticamente às 7h</p>
         </td></tr>
 
       </table>
@@ -146,9 +146,9 @@ export default async (_req: Request) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              from: 'BD Contratos <alertas@bragadantas.com.br>',
+              from: 'Seu Contrato <alertas@bragadantas.com.br>',
               to: profile.email,
-              subject: `[BD Contratos] Resumo de Alertas — ${formatDateBR(todayStr)}`,
+              subject: `[Seu Contrato] Resumo de Alertas — ${formatDateBR(todayStr)}`,
               html: buildHtml(profile.full_name, overdue, upcoming),
             }),
           })
