@@ -1,5 +1,5 @@
-﻿import { NavLink, Link, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FileText, Users, Briefcase, Bell, ClipboardList, UserCog, LogOut, Scale, FileScan, ShieldAlert, CalendarDays } from 'lucide-react'
+import { NavLink, Link, useNavigate } from 'react-router-dom'
+import { LayoutDashboard, FileText, Users, Briefcase, Bell, ClipboardList, UserCog, LogOut, Scale, FileScan, ShieldAlert, CalendarDays, type LucideIcon } from 'lucide-react'
 import clsx from 'clsx'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -28,13 +28,29 @@ const adminItems = [
   { to: '/usuarios', icon: UserCog, label: 'Usuários' },
 ]
 
+function SideNavItem({ to, icon: Icon, label, onClick }: { to: string; icon: LucideIcon; label: string; onClick: () => void }) {
+  return (
+    <NavLink key={to} to={to} onClick={onClick}>
+      {({ isActive }) => (
+        <div className={clsx(
+          'flex items-center gap-3 py-2.5 rounded-lg mb-0.5 text-sm font-medium transition-all duration-150',
+          isActive
+            ? 'bg-accent/10 text-white border-l-[3px] border-accent pl-2.5 pr-3'
+            : 'text-white/60 hover:bg-white/10 hover:text-white px-3'
+        )}>
+          <Icon className={clsx('w-4 h-4 flex-shrink-0', isActive && 'text-accent')} />
+          {label}
+        </div>
+      )}
+    </NavLink>
+  )
+}
+
 export function Sidebar({ open, onClose, onOpen }: SidebarProps) {
   const { profile, signOut, isAdmin } = useAuth()
   const navigate = useNavigate()
 
   const handleSignOut = async () => {
-    // Navega ANTES do signOut terminar para evitar flash de tela protegida.
-    // O onAuthStateChange vai disparar SIGNED_OUT e limpar o estado.
     navigate('/login', { replace: true })
     await signOut()
   }
@@ -43,7 +59,6 @@ export function Sidebar({ open, onClose, onOpen }: SidebarProps) {
     <aside
       className={clsx(
         'fixed inset-y-0 left-0 w-64 bg-brand flex flex-col z-30 shadow-xl',
-        // Mobile: desliza para dentro/fora com transform
         'transform transition-transform duration-300 md:translate-x-0',
         open ? 'translate-x-0' : '-translate-x-full'
       )}
@@ -64,41 +79,20 @@ export function Sidebar({ open, onClose, onOpen }: SidebarProps) {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-thin">
         <p className="text-white/30 text-xs font-semibold uppercase tracking-wider px-3 mb-2">Menu</p>
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink key={to} to={to} onClick={onClose}
-            className={({ isActive }) => clsx(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 text-sm font-medium transition-all duration-150',
-              isActive ? 'bg-white/15 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'
-            )}>
-            <Icon className="w-4 h-4 flex-shrink-0" />
-            {label}
-          </NavLink>
+        {navItems.map(item => (
+          <SideNavItem key={item.to} {...item} onClick={onClose} />
         ))}
 
         <p className="text-white/30 text-xs font-semibold uppercase tracking-wider px-3 mb-2 mt-6">Parecer & Diagnóstico</p>
-        {analysisItems.map(({ to, icon: Icon, label }) => (
-          <NavLink key={to} to={to} onClick={onClose}
-            className={({ isActive }) => clsx(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 text-sm font-medium transition-all duration-150',
-              isActive ? 'bg-white/15 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'
-            )}>
-            <Icon className="w-4 h-4 flex-shrink-0" />
-            {label}
-          </NavLink>
+        {analysisItems.map(item => (
+          <SideNavItem key={item.to} {...item} onClick={onClose} />
         ))}
 
         {isAdmin && (
           <>
             <p className="text-white/30 text-xs font-semibold uppercase tracking-wider px-3 mb-2 mt-6">Administração</p>
-            {adminItems.map(({ to, icon: Icon, label }) => (
-              <NavLink key={to} to={to} onClick={onClose}
-                className={({ isActive }) => clsx(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 text-sm font-medium transition-all duration-150',
-                  isActive ? 'bg-white/15 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'
-                )}>
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {label}
-              </NavLink>
+            {adminItems.map(item => (
+              <SideNavItem key={item.to} {...item} onClick={onClose} />
             ))}
           </>
         )}
@@ -111,7 +105,7 @@ export function Sidebar({ open, onClose, onOpen }: SidebarProps) {
           onClick={onClose}
           className="flex items-center gap-3 mb-3 cursor-pointer hover:bg-white/10 rounded-xl transition-all px-2 py-1.5"
         >
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-sm font-semibold">
+          <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent text-sm font-semibold">
             {profile?.full_name?.charAt(0) || 'U'}
           </div>
           <div className="flex-1 min-w-0">

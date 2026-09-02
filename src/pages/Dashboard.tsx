@@ -48,10 +48,10 @@ export default function Dashboard() {
   }, [])
 
   const statCards = [
-    { label: 'Total de Contratos', value: stats.total, icon: FileText, color: 'bg-navy-900 text-white', iconBg: 'bg-white/10', accent: '' },
-    { label: 'Contratos Ativos', value: stats.ativos, icon: Users, color: 'bg-navy-800 text-white', iconBg: 'bg-white/10', accent: '' },
-    { label: 'Vencendo em 30 dias', value: stats.vencendo, icon: Clock, color: stats.vencendo > 0 ? 'bg-amber-500 text-white' : 'bg-navy-700 text-white', iconBg: 'bg-white/10', accent: '' },
-    { label: 'Oportunidades', value: stats.oportunidades, icon: TrendingUp, color: 'bg-navy-700 text-white', iconBg: 'bg-white/10', accent: '' },
+    { label: 'Total de Contratos', value: stats.total, icon: FileText, color: 'bg-navy-900 text-white ring-1 ring-accent/20', iconBg: 'bg-white/10' },
+    { label: 'Contratos Ativos', value: stats.ativos, icon: Users, color: 'bg-navy-800 text-white', iconBg: 'bg-white/10' },
+    { label: 'Vencendo em 30 dias', value: stats.vencendo, icon: Clock, color: stats.vencendo > 0 ? 'bg-amber-500 text-white' : 'bg-navy-700 text-white', iconBg: 'bg-white/10' },
+    { label: 'Oportunidades', value: stats.oportunidades, icon: TrendingUp, color: stats.oportunidades > 0 ? 'bg-accent text-white' : 'bg-navy-700 text-white', iconBg: 'bg-white/10' },
   ]
 
   if (loading) return (
@@ -93,7 +93,7 @@ export default function Dashboard() {
                 <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px' }} />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                  {chartData.map((_, i) => <Cell key={i} fill={i === 0 ? '#1E1A34' : i === 1 ? '#00A499' : '#94a3b8'} />)}
+                  {chartData.map((_, i) => <Cell key={i} fill={i === 0 ? '#1E1A34' : i === 1 ? '#00A499' : '#2E285F'} />)}
                   <LabelList dataKey="value" position="top" style={{ fontSize: '12px', fill: '#64748b', fontWeight: 600 }} />
                 </Bar>
               </BarChart>
@@ -107,7 +107,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-navy-800">Oportunidades</h2>
-            <Link to="/oportunidades" className="text-brand text-xs font-medium hover:underline flex items-center gap-1">
+            <Link to="/oportunidades" className="text-accent text-xs font-medium hover:underline flex items-center gap-1">
               Ver todas <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
@@ -132,7 +132,7 @@ export default function Dashboard() {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-slate-50">
           <h2 className="font-semibold text-navy-800">Contratos Recentes</h2>
-          <Link to="/contratos" className="text-brand text-xs font-medium hover:underline flex items-center gap-1">
+          <Link to="/contratos" className="text-accent text-xs font-medium hover:underline flex items-center gap-1">
             Ver todos <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
@@ -149,7 +149,7 @@ export default function Dashboard() {
             {recentContracts.map(c => (
               <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4">
-                  <Link to={`/contratos/${c.id}`} className="text-sm font-medium text-navy-800 hover:text-brand truncate max-w-[200px] block">
+                  <Link to={`/contratos/${c.id}`} className="text-sm font-medium text-navy-800 hover:text-accent truncate max-w-[200px] block">
                     {c.title}
                   </Link>
                 </td>
