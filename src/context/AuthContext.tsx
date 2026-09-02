@@ -7,12 +7,19 @@ interface AuthContextType {
   loading: boolean
   isAuthenticated: boolean
   isAdmin: boolean
+  isInternal: boolean
+  isClient: boolean
+  isWorkspaceOwner: boolean
   signOut: () => Promise<void>
   refreshAuth: () => Promise<void>
 }
 
+const INTERNAL_ROLES = ['socio', 'administrador', 'advogado', 'assistente']
+const CLIENT_ROLES = ['cliente_owner', 'cliente_member']
+
 const AuthContext = createContext<AuthContextType>({
   profile: null, loading: true, isAuthenticated: false, isAdmin: false,
+  isInternal: false, isClient: false, isWorkspaceOwner: false,
   signOut: async () => {}, refreshAuth: async () => {}
 })
 
@@ -163,8 +170,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [profile?.role]
   )
 
+  const isInternal = useMemo(
+    () => !!profile?.role && INTERNAL_ROLES.includes(profile.role),
+    [profile?.role]
+  )
+
+  const isClient = useMemo(
+    () => !!profile?.role && CLIENT_ROLES.includes(profile.role),
+    [profile?.role]
+  )
+
+  const isWorkspaceOwner = useMemo(
+    () => profile?.role === 'cliente_owner',
+    [profile?.role]
+  )
+
   return (
-    <AuthContext.Provider value={{ profile, loading, isAuthenticated, isAdmin, signOut, refreshAuth }}>
+    <AuthContext.Provider value={{ profile, loading, isAuthenticated, isAdmin, isInternal, isClient, isWorkspaceOwner, signOut, refreshAuth }}>
       {children}
     </AuthContext.Provider>
   )

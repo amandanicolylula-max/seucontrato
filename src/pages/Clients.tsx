@@ -245,7 +245,7 @@ export default function Clients() {
                   <td className="px-6 py-4 text-sm text-slate-500">{format(new Date(c.created_at), 'dd/MM/yyyy')}</td>
                   <td className="px-6 py-4">
                     <Link
-                      to={`/contratos?cliente=${encodeURIComponent(c.name)}`}
+                      to={`/painel/contratos?cliente=${encodeURIComponent(c.name)}`}
                       className="inline-flex items-center gap-1.5 text-xs font-medium text-brand hover:text-brand-dark transition-colors"
                     >
                       <FileText className="w-3.5 h-3.5" /> Ver contratos

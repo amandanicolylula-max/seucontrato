@@ -391,7 +391,7 @@ export default function Agenda() {
                         )}
                       </div>
                       <Link
-                        to={`/contratos/${e.contractId}`}
+                        to={`/painel/contratos/${e.contractId}`}
                         className="text-sm font-semibold text-navy-800 hover:text-brand block leading-snug transition-colors"
                       >
                         {e.contractTitle}

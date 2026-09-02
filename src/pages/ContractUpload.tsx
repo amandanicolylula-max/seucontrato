@@ -122,7 +122,7 @@ export default function ContractUpload() {
 
     if (error || !metadata?.raw_extraction) {
       toast.error('Extração concluída mas não foi possível carregar os dados.')
-      navigate(`/contratos/${cId}`)
+      navigate(`/painel/contratos/${cId}`)
       return
     }
 
@@ -230,7 +230,7 @@ export default function ContractUpload() {
       .update({ validated_by: profile?.id, validated_at: new Date().toISOString() })
       .eq('contract_id', contractId)
     toast.success('Contrato validado e salvo!')
-    navigate(`/contratos/${contractId}`)
+    navigate(`/painel/contratos/${contractId}`)
   }
 
   const handleCancel = async () => {
@@ -247,7 +247,7 @@ export default function ContractUpload() {
       ])
       await supabase.from('contracts').delete().eq('id', contractId)
     }
-    navigate('/contratos')
+    navigate('/painel/contratos')
   }
 
   // Formata segundos para exibição

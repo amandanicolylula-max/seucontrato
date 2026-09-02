@@ -66,7 +66,7 @@ export default function Users() {
     setSaving(false)
   }
 
-  const roleLabels: Record<UserRole, string> = { socio: 'Sócio', administrador: 'Administrador', advogado: 'Advogado', assistente: 'Assistente' }
+  const roleLabels: Record<UserRole, string> = { socio: 'Sócio', administrador: 'Administrador', advogado: 'Advogado', assistente: 'Assistente', cliente_owner: 'Cliente (Owner)', cliente_member: 'Cliente (Membro)' }
 
   return (
     <div className="space-y-6">

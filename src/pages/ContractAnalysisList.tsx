@@ -68,7 +68,7 @@ export default function ContractAnalysisList() {
           <p className="text-slate-500 text-sm mt-1">{analyses.length} parecer(es) gerado(s)</p>
         </div>
         <Link
-          to="/analise/nova"
+          to="/painel/analise/nova"
           className="flex items-center gap-2 bg-brand hover:bg-brand-light text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm"
         >
           <Plus className="w-4 h-4" /> Nova Análise
@@ -108,7 +108,7 @@ export default function ContractAnalysisList() {
               return (
                 <div key={a.id} className="flex items-center group hover:bg-slate-50 transition-colors">
                   <Link
-                    to={`/analise/${a.id}`}
+                    to={`/painel/analise/${a.id}`}
                     className="flex items-center gap-4 px-6 py-4 flex-1 min-w-0"
                   >
                     <div className="w-10 h-10 bg-brand/10 rounded-xl flex items-center justify-center flex-shrink-0">

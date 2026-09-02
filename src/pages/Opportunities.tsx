@@ -125,7 +125,7 @@ export default function Opportunities() {
                 <div className="flex-1">
                   <p className="font-semibold text-navy-800 text-sm">{op.type}</p>
                   {op.contracts && (
-                    <Link to={`/contratos/${op.contract_id}`} className="text-xs text-brand hover:underline mt-0.5 block">{op.contracts.title}</Link>
+                    <Link to={`/painel/contratos/${op.contract_id}`} className="text-xs text-brand hover:underline mt-0.5 block">{op.contracts.title}</Link>
                   )}
                 </div>
                 <div className="flex gap-1.5 ml-3">

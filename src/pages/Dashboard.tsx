@@ -107,7 +107,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-navy-800">Oportunidades</h2>
-            <Link to="/oportunidades" className="text-accent text-xs font-medium hover:underline flex items-center gap-1">
+            <Link to="/painel/oportunidades" className="text-accent text-xs font-medium hover:underline flex items-center gap-1">
               Ver todas <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
@@ -132,7 +132,7 @@ export default function Dashboard() {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b border-slate-50">
           <h2 className="font-semibold text-navy-800">Contratos Recentes</h2>
-          <Link to="/contratos" className="text-accent text-xs font-medium hover:underline flex items-center gap-1">
+          <Link to="/painel/contratos" className="text-accent text-xs font-medium hover:underline flex items-center gap-1">
             Ver todos <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
@@ -149,7 +149,7 @@ export default function Dashboard() {
             {recentContracts.map(c => (
               <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4">
-                  <Link to={`/contratos/${c.id}`} className="text-sm font-medium text-navy-800 hover:text-accent truncate max-w-[200px] block">
+                  <Link to={`/painel/contratos/${c.id}`} className="text-sm font-medium text-navy-800 hover:text-accent truncate max-w-[200px] block">
                     {c.title}
                   </Link>
                 </td>

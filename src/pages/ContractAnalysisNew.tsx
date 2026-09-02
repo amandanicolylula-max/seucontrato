@@ -71,7 +71,7 @@ export default function ContractAnalysisNew() {
           const status = (payload.new as { status: string }).status
           if (status === 'rascunho' || status === 'finalizado') {
             cleanup()
-            navigate(`/analise/${analysisId}`)
+            navigate(`/painel/analise/${analysisId}`)
           } else if (status === 'falhou') {
             cleanup()
             setProcessing(false)
@@ -163,7 +163,7 @@ export default function ContractAnalysisNew() {
               </p>
             </div>
             <button
-              onClick={() => navigate('/analise')}
+              onClick={() => navigate('/painel/analise')}
               className="bg-brand text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-brand-light transition-all"
             >
               Ver Lista de Análises
@@ -321,7 +321,7 @@ export default function ContractAnalysisNew() {
         <div className="flex gap-3 pt-2">
           <button
             type="button"
-            onClick={() => navigate('/analise')}
+            onClick={() => navigate('/painel/analise')}
             className="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition-all"
           >
             Cancelar

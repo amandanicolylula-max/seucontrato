@@ -240,7 +240,7 @@ Seu Contrato`
                   </div>
                   {alert.contracts && (
                     <Link
-                      to={`/contratos/${alert.contract_id}`}
+                      to={`/painel/contratos/${alert.contract_id}`}
                       className="text-sm font-semibold text-navy-800 hover:text-brand block mt-0.5 truncate"
                     >
                       {(alert.contracts as { title: string }).title}

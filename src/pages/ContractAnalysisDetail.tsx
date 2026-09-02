@@ -133,7 +133,7 @@ export default function ContractAnalysisDetail() {
       .select('*, clients(name, email)')
       .eq('id', id)
       .single()
-    if (error) { toast.error('Análise não encontrada'); navigate('/analise'); return }
+    if (error) { toast.error('Análise não encontrada'); navigate('/painel/analise'); return }
     setAnalysis(data as ContractAnalysis)
     setLoading(false)
   }, [id, navigate])
@@ -191,7 +191,7 @@ export default function ContractAnalysisDetail() {
     const { error } = await supabase.from('contract_analyses').delete().eq('id', analysis.id)
     if (error) { toast.error('Erro ao excluir análise'); setDeleting(false); return }
     toast.success('Análise excluída')
-    navigate('/analise')
+    navigate('/painel/analise')
   }
 
   const handleExportPDF = () => {
@@ -286,7 +286,7 @@ export default function ContractAnalysisDetail() {
             Ocorreu um erro ao gerar o parecer. Tente criar uma nova análise.
           </p>
         </div>
-        <Link to="/analise/nova" className="bg-brand text-white px-6 py-2.5 rounded-xl text-sm font-medium">
+        <Link to="/painel/analise/nova" className="bg-brand text-white px-6 py-2.5 rounded-xl text-sm font-medium">
           Nova Análise
         </Link>
       </div>
@@ -303,7 +303,7 @@ export default function ContractAnalysisDetail() {
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           <button
-            onClick={() => navigate('/analise')}
+            onClick={() => navigate('/painel/analise')}
             className="mt-1 p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />

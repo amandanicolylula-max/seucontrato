@@ -10,22 +10,22 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/contratos', icon: FileText, label: 'Contratos' },
-  { to: '/clientes', icon: Briefcase, label: 'Clientes' },
-  { to: '/oportunidades', icon: Scale, label: 'Oportunidades' },
-  { to: '/alertas', icon: Bell, label: 'Alertas' },
-  { to: '/agenda', icon: CalendarDays, label: 'Agenda' },
-  { to: '/auditoria', icon: ClipboardList, label: 'Auditoria' },
+  { to: '/painel', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/painel/contratos', icon: FileText, label: 'Contratos' },
+  { to: '/painel/clientes', icon: Briefcase, label: 'Clientes' },
+  { to: '/painel/oportunidades', icon: Scale, label: 'Oportunidades' },
+  { to: '/painel/alertas', icon: Bell, label: 'Alertas' },
+  { to: '/painel/agenda', icon: CalendarDays, label: 'Agenda' },
+  { to: '/painel/auditoria', icon: ClipboardList, label: 'Auditoria' },
 ]
 
 const analysisItems = [
-  { to: '/analise', icon: FileScan, label: 'Análise Contratual' },
-  { to: '/banco-de-problemas', icon: ShieldAlert, label: 'Banco de Problemas' },
+  { to: '/painel/analise', icon: FileScan, label: 'Análise Contratual' },
+  { to: '/painel/banco-de-problemas', icon: ShieldAlert, label: 'Banco de Problemas' },
 ]
 
 const adminItems = [
-  { to: '/usuarios', icon: UserCog, label: 'Usuários' },
+  { to: '/painel/usuarios', icon: UserCog, label: 'Usuários' },
 ]
 
 function SideNavItem({ to, icon: Icon, label, onClick }: { to: string; icon: LucideIcon; label: string; onClick: () => void }) {
@@ -101,7 +101,7 @@ export function Sidebar({ open, onClose, onOpen }: SidebarProps) {
       {/* User */}
       <div className="px-4 py-4 border-t border-white/10">
         <Link
-          to="/perfil"
+          to="/painel/perfil"
           onClick={onClose}
           className="flex items-center gap-3 mb-3 cursor-pointer hover:bg-white/10 rounded-xl transition-all px-2 py-1.5"
         >

@@ -64,7 +64,7 @@ export default function Contracts() {
           <h1 className="font-display text-3xl text-navy-900">Contratos</h1>
           <p className="text-slate-500 text-sm mt-1">{contracts.length} contrato(s) cadastrado(s)</p>
         </div>
-        <Link to="/contratos/novo" className="flex items-center gap-2 bg-brand hover:bg-brand-light text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm">
+        <Link to="/painel/contratos/novo" className="flex items-center gap-2 bg-brand hover:bg-brand-light text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm">
           <Plus className="w-4 h-4" /> Novo Contrato
         </Link>
       </div>
@@ -119,7 +119,7 @@ export default function Contracts() {
                   <td className="px-6 py-4 text-sm text-slate-500">{format(new Date(c.created_at), 'dd/MM/yyyy')}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <Link to={`/contratos/${c.id}`} className="text-brand text-sm font-medium hover:underline">Ver</Link>
+                      <Link to={`/painel/contratos/${c.id}`} className="text-brand text-sm font-medium hover:underline">Ver</Link>
                       <button onClick={(e) => handleDelete(c.id, e)} className="text-slate-400 hover:text-red-500 transition-colors p-1">
                         <Trash2 className="w-4 h-4" />
                       </button>

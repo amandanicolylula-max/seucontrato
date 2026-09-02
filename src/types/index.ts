@@ -1,4 +1,6 @@
-export type UserRole = 'socio' | 'administrador' | 'advogado' | 'assistente'
+export type InternalRole = 'socio' | 'administrador' | 'advogado' | 'assistente'
+export type ClientRole = 'cliente_owner' | 'cliente_member'
+export type UserRole = InternalRole | ClientRole
 export type ContractStatus = 'ativo' | 'em_renovacao' | 'encerrado' | 'arquivado'
 export type ExtractionStatus = 'pendente' | 'processando' | 'concluido' | 'falhou'
 export type OpportunityStatus = 'identificada' | 'em_abordagem' | 'convertida' | 'descartada'

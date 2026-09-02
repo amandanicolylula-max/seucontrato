@@ -1,8 +1,13 @@
-﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { AppLayout } from '@/components/Layout/AppLayout'
+import { ClientLayout } from '@/components/Layout/ClientLayout'
+import { InternalGuard } from '@/guards/InternalGuard'
+import { ClientGuard } from '@/guards/ClientGuard'
+import { RoleRedirect } from '@/guards/RoleRedirect'
 import Login from '@/pages/Login'
+import CadastroCliente from '@/pages/CadastroCliente'
 import Dashboard from '@/pages/Dashboard'
 import Contracts from '@/pages/Contracts'
 import ContractUpload from '@/pages/ContractUpload'
@@ -18,10 +23,13 @@ import ContractAnalysisNew from '@/pages/ContractAnalysisNew'
 import ContractAnalysisDetail from '@/pages/ContractAnalysisDetail'
 import BancoProblemas from '@/pages/BancoProblemas'
 import Agenda from '@/pages/Agenda'
+import ClientHome from '@/pages/client/ClientHome'
+import MeusContratos from '@/pages/client/MeusContratos'
+import MinhasAnalises from '@/pages/client/MinhasAnalises'
+import PerfilCliente from '@/pages/client/PerfilCliente'
+import EquipeCliente from '@/pages/client/EquipeCliente'
 import { Toaster } from 'react-hot-toast'
 
-// Spinner com feedback progressivo: após 4s exibe mensagem de espera,
-// após 10s sugere recarregar a página.
 function Spinner() {
   const [elapsed, setElapsed] = useState(0)
 
@@ -60,41 +68,57 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isAdmin } = useAuth()
   if (!isAuthenticated) return <Navigate to="/login" replace />
-  if (!isAdmin) return <Navigate to="/dashboard" replace />
+  if (!isAdmin) return <Navigate to="/painel" replace />
   return <>{children}</>
 }
 
 function LoginRoute() {
   const { isAuthenticated } = useAuth()
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />
+  if (isAuthenticated) return <Navigate to="/" replace />
   return <Login />
 }
 
-// AppRoutes bloqueia TODO o roteamento enquanto a sessão está carregando,
-// evitando que ProtectedRoute faça redirect prematuro para /login.
+function CadastroRoute() {
+  const { isAuthenticated } = useAuth()
+  if (isAuthenticated) return <Navigate to="/" replace />
+  return <CadastroCliente />
+}
+
 function AppRoutes() {
   const { loading } = useAuth()
   if (loading) return <Spinner />
   return (
     <Routes>
       <Route path="/login" element={<LoginRoute />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/contratos" element={<Contracts />} />
-        <Route path="/contratos/novo" element={<ContractUpload />} />
-        <Route path="/contratos/:id" element={<ContractDetail />} />
-        <Route path="/clientes" element={<Clients />} />
-        <Route path="/oportunidades" element={<Opportunities />} />
-        <Route path="/alertas" element={<Alerts />} />
-        <Route path="/agenda" element={<Agenda />} />
-        <Route path="/auditoria" element={<AuditLog />} />
-        <Route path="/perfil" element={<Profile />} />
-        <Route path="/analise" element={<ContractAnalysisList />} />
-        <Route path="/analise/nova" element={<ContractAnalysisNew />} />
-        <Route path="/analise/:id" element={<ContractAnalysisDetail />} />
-        <Route path="/banco-de-problemas" element={<BancoProblemas />} />
-        <Route path="/usuarios" element={<AdminRoute><Users /></AdminRoute>} />
+      <Route path="/cadastro" element={<CadastroRoute />} />
+      <Route path="/" element={<ProtectedRoute><RoleRedirect /></ProtectedRoute>} />
+
+      {/* Corpo jurídico (interno) */}
+      <Route element={<ProtectedRoute><InternalGuard><AppLayout /></InternalGuard></ProtectedRoute>}>
+        <Route path="/painel" element={<Dashboard />} />
+        <Route path="/painel/contratos" element={<Contracts />} />
+        <Route path="/painel/contratos/novo" element={<ContractUpload />} />
+        <Route path="/painel/contratos/:id" element={<ContractDetail />} />
+        <Route path="/painel/clientes" element={<Clients />} />
+        <Route path="/painel/oportunidades" element={<Opportunities />} />
+        <Route path="/painel/alertas" element={<Alerts />} />
+        <Route path="/painel/agenda" element={<Agenda />} />
+        <Route path="/painel/auditoria" element={<AuditLog />} />
+        <Route path="/painel/perfil" element={<Profile />} />
+        <Route path="/painel/analise" element={<ContractAnalysisList />} />
+        <Route path="/painel/analise/nova" element={<ContractAnalysisNew />} />
+        <Route path="/painel/analise/:id" element={<ContractAnalysisDetail />} />
+        <Route path="/painel/banco-de-problemas" element={<BancoProblemas />} />
+        <Route path="/painel/usuarios" element={<AdminRoute><Users /></AdminRoute>} />
+      </Route>
+
+      {/* Portal do cliente */}
+      <Route element={<ProtectedRoute><ClientGuard><ClientLayout /></ClientGuard></ProtectedRoute>}>
+        <Route path="/app" element={<ClientHome />} />
+        <Route path="/app/contratos" element={<MeusContratos />} />
+        <Route path="/app/analises" element={<MinhasAnalises />} />
+        <Route path="/app/equipe" element={<EquipeCliente />} />
+        <Route path="/app/perfil" element={<PerfilCliente />} />
       </Route>
     </Routes>
   )

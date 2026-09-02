@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -22,7 +22,7 @@ export default function Login() {
       setLoading(false)
     } else {
       await refreshAuth()
-      navigate('/dashboard', { replace: true })
+      navigate('/', { replace: true })
     }
   }
 
@@ -102,10 +102,14 @@ export default function Login() {
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
+
+        <div className="auth-link">
+          Ainda não tem conta? <Link to="/cadastro">Criar conta</Link>
+        </div>
       </div>
 
       {/* Footer */}
-      <p className="auth-footer">Seu Contrato &copy; {new Date().getFullYear()}</p>
+      <p className="auth-footer">Seu Contrato &copy; {new Date().getFullYear()} &middot; CorpLaw Advogados</p>
     </div>
   )
 }

@@ -224,7 +224,7 @@ export default function ContractDetail() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/contratos" className="p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-500">
+        <Link to="/painel/contratos" className="p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-500">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="flex-1">
