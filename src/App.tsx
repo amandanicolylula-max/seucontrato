@@ -20,6 +20,9 @@ import AuditLog from '@/pages/AuditLog'
 import EquipeInterna from '@/pages/EquipeInterna'
 import ClientesPlataforma from '@/pages/ClientesPlataforma'
 import ClienteDetalhe from '@/pages/ClienteDetalhe'
+import AnaliseCorplawList from '@/pages/painel/AnaliseCorplawList'
+import AnaliseCorplawNew from '@/pages/painel/AnaliseCorplawNew'
+import AnaliseCorplawDetail from '@/pages/painel/AnaliseCorplawDetail'
 import PlanoCliente from '@/pages/client/PlanoCliente'
 import CreditosCliente from '@/pages/client/CreditosCliente'
 import Profile from '@/pages/Profile'
@@ -119,6 +122,9 @@ function AppRoutes() {
         <Route path="/painel/analise" element={<ContractAnalysisList />} />
         <Route path="/painel/analise/nova" element={<ContractAnalysisNew />} />
         <Route path="/painel/analise/:id" element={<ContractAnalysisDetail />} />
+        <Route path="/painel/analise-corplaw" element={<AnaliseCorplawList />} />
+        <Route path="/painel/analise-corplaw/nova" element={<AnaliseCorplawNew />} />
+        <Route path="/painel/analise-corplaw/:id" element={<AnaliseCorplawDetail />} />
         <Route path="/painel/banco-de-problemas" element={<BancoProblemas />} />
         <Route path="/painel/equipe-interna" element={<AdminRoute><EquipeInterna /></AdminRoute>} />
         <Route path="/painel/clientes-plataforma" element={<ClientesPlataforma />} />
