@@ -16,7 +16,11 @@ import Clients from '@/pages/Clients'
 import Opportunities from '@/pages/Opportunities'
 import Alerts from '@/pages/Alerts'
 import AuditLog from '@/pages/AuditLog'
-import Users from '@/pages/Users'
+import EquipeInterna from '@/pages/EquipeInterna'
+import ClientesPlataforma from '@/pages/ClientesPlataforma'
+import ClienteDetalhe from '@/pages/ClienteDetalhe'
+import PlanoCliente from '@/pages/client/PlanoCliente'
+import CreditosCliente from '@/pages/client/CreditosCliente'
 import Profile from '@/pages/Profile'
 import ContractAnalysisList from '@/pages/ContractAnalysisList'
 import ContractAnalysisNew from '@/pages/ContractAnalysisNew'
@@ -109,7 +113,9 @@ function AppRoutes() {
         <Route path="/painel/analise/nova" element={<ContractAnalysisNew />} />
         <Route path="/painel/analise/:id" element={<ContractAnalysisDetail />} />
         <Route path="/painel/banco-de-problemas" element={<BancoProblemas />} />
-        <Route path="/painel/usuarios" element={<AdminRoute><Users /></AdminRoute>} />
+        <Route path="/painel/equipe-interna" element={<AdminRoute><EquipeInterna /></AdminRoute>} />
+        <Route path="/painel/clientes-plataforma" element={<ClientesPlataforma />} />
+        <Route path="/painel/clientes-plataforma/:workspaceId" element={<ClienteDetalhe />} />
       </Route>
 
       {/* Portal do cliente */}
@@ -118,6 +124,8 @@ function AppRoutes() {
         <Route path="/app/contratos" element={<MeusContratos />} />
         <Route path="/app/analises" element={<MinhasAnalises />} />
         <Route path="/app/equipe" element={<EquipeCliente />} />
+        <Route path="/app/plano" element={<PlanoCliente />} />
+        <Route path="/app/creditos" element={<CreditosCliente />} />
         <Route path="/app/perfil" element={<PerfilCliente />} />
       </Route>
     </Routes>

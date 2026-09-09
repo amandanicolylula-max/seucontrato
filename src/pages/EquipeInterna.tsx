@@ -1,21 +1,39 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { UserCog, UserPlus, X, Shield, ShieldOff } from 'lucide-react'
-import { Profile, UserRole } from '@/types'
-import { Badge } from '@/components/UI/Badge'
+import { Profile, InternalRole } from '@/types'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
+import { SupervisorPicker } from '@/components/workspace/SupervisorPicker'
 
-export default function Users() {
+const INTERNAL_ROLES: InternalRole[] = ['socio', 'advogado', 'assistente']
+
+const roleLabels: Record<InternalRole, string> = {
+  socio: 'Sócio',
+  advogado: 'Advogado',
+  assistente: 'Estagiário',
+}
+
+export default function EquipeInterna() {
   const [users, setUsers] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState({ full_name: '', email: '', password: '', role: 'advogado' as UserRole })
+  const [form, setForm] = useState<{
+    full_name: string
+    email: string
+    password: string
+    role: InternalRole
+    supervisor_id: string | null
+  }>({ full_name: '', email: '', password: '', role: 'advogado', supervisor_id: null })
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
-    const { data } = await supabase.from('profiles').select('*').order('full_name')
-    setUsers(data || [])
+    const { data } = await supabase
+      .from('profiles')
+      .select('*, supervisor:supervisor_id(id, full_name, role)')
+      .in('role', INTERNAL_ROLES)
+      .order('full_name')
+    setUsers((data as Profile[]) || [])
     setLoading(false)
   }
 
@@ -27,14 +45,28 @@ export default function Users() {
     else { toast.success(current ? 'Usuário desativado' : 'Usuário reativado'); load() }
   }
 
-  const changeRole = async (id: string, role: UserRole) => {
-    const { error } = await supabase.from('profiles').update({ role }).eq('id', id)
-    if (error) toast.error('Erro ao atualizar perfil')
-    else { toast.success('Perfil atualizado!'); load() }
+  const changeRole = async (u: Profile, newRole: InternalRole) => {
+    if (newRole === 'assistente' && !u.supervisor_id) {
+      toast.error('Estagiário precisa ter supervisor. Edite pelo modal.')
+      return
+    }
+    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', u.id)
+    if (error) toast.error('Erro ao atualizar perfil: ' + error.message)
+    else { toast.success('Perfil atualizado'); load() }
+  }
+
+  const changeSupervisor = async (userId: string, supervisor_id: string | null) => {
+    const { error } = await supabase.from('profiles').update({ supervisor_id }).eq('id', userId)
+    if (error) toast.error('Erro ao atualizar supervisor: ' + error.message)
+    else { toast.success('Supervisor atualizado'); load() }
   }
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (form.role === 'assistente' && !form.supervisor_id) {
+      toast.error('Estagiário precisa ter supervisor definido')
+      return
+    }
     setSaving(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -49,6 +81,7 @@ export default function Users() {
           password: form.password,
           full_name: form.full_name,
           role: form.role,
+          supervisor_id: form.supervisor_id,
         }),
       })
       const result = await response.json()
@@ -57,23 +90,21 @@ export default function Users() {
       } else {
         toast.success('Usuário criado com sucesso!')
         setShowModal(false)
-        setForm({ full_name: '', email: '', password: '', role: 'advogado' })
+        setForm({ full_name: '', email: '', password: '', role: 'advogado', supervisor_id: null })
         load()
       }
-    } catch (err) {
+    } catch {
       toast.error('Erro de conexão ao criar usuário')
     }
     setSaving(false)
   }
 
-  const roleLabels: Record<UserRole, string> = { socio: 'Sócio', administrador: 'Administrador', advogado: 'Advogado', assistente: 'Assistente', cliente_owner: 'Cliente (Owner)', cliente_member: 'Cliente (Membro)' }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-3xl text-navy-900">Usuários</h1>
-          <p className="text-slate-500 text-sm mt-1">{users.length} usuário(s) no sistema</p>
+          <h1 className="font-display text-3xl text-navy-900">Equipe Interna</h1>
+          <p className="text-slate-500 text-sm mt-1">{users.length} usuário(s) internos — sócios, advogados e estagiários</p>
         </div>
         <button onClick={() => setShowModal(true)} className="flex items-center gap-2 bg-brand hover:bg-brand-light text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm">
           <UserPlus className="w-4 h-4" /> Novo Usuário
@@ -86,12 +117,12 @@ export default function Users() {
         ) : users.length === 0 ? (
           <div className="py-16 text-center">
             <UserCog className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500 text-sm">Nenhum usuário cadastrado</p>
+            <p className="text-slate-500 text-sm">Nenhum usuário interno</p>
           </div>
         ) : (
           <table className="w-full">
             <thead className="bg-slate-50/80">
-              <tr>{['Usuário', 'E-mail', 'Perfil', 'Status', 'Desde', 'Ações'].map(h => (
+              <tr>{['Usuário', 'E-mail', 'Perfil', 'Supervisor', 'Status', 'Desde', 'Ações'].map(h => (
                 <th key={h} className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
               ))}</tr>
             </thead>
@@ -106,10 +137,19 @@ export default function Users() {
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600">{u.email}</td>
                   <td className="px-6 py-4">
-                    <select value={u.role} onChange={e => changeRole(u.id, e.target.value as UserRole)}
+                    <select value={u.role} onChange={e => changeRole(u, e.target.value as InternalRole)}
                       className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand/30 text-slate-600 bg-white">
-                      {(Object.keys(roleLabels) as UserRole[]).map(r => <option key={r} value={r}>{roleLabels[r]}</option>)}
+                      {INTERNAL_ROLES.map(r => <option key={r} value={r}>{roleLabels[r]}</option>)}
                     </select>
+                  </td>
+                  <td className="px-6 py-4">
+                    {u.role === 'assistente' ? (
+                      <div className="min-w-[180px]">
+                        <SupervisorPickerInline value={u.supervisor_id || null} onChange={v => changeSupervisor(u.id, v)} />
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400">—</span>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${u.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
@@ -134,32 +174,36 @@ export default function Users() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-semibold text-navy-800 text-lg">Novo Usuário</h2>
+              <h2 className="font-semibold text-navy-800 text-lg">Novo Usuário Interno</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleInvite} className="space-y-4">
               {[
                 { key: 'full_name', label: 'Nome completo *', required: true, placeholder: 'Nome do usuário' },
-                { key: 'email', label: 'E-mail *', required: true, type: 'email', placeholder: 'email@exemplo.com' },
+                { key: 'email', label: 'E-mail *', required: true, type: 'email', placeholder: 'email@corplawadvogados.com.br' },
                 { key: 'password', label: 'Senha inicial *', required: true, type: 'password', placeholder: 'Mínimo 6 caracteres' },
               ].map(({ key, label, required, placeholder, type }) => (
                 <div key={key}>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
                   <input type={type || 'text'} required={required} placeholder={placeholder}
-                    value={form[key as keyof typeof form]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                    value={form[key as 'full_name' | 'email' | 'password']}
+                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand" />
                 </div>
               ))}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Perfil de Acesso *</label>
-                <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value as UserRole }))}
+                <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value as InternalRole, supervisor_id: null }))}
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand">
-                  <option value="socio">Sócio</option>
-                  <option value="administrador">Administrador</option>
-                  <option value="advogado">Advogado</option>
-                  <option value="assistente">Assistente</option>
+                  {INTERNAL_ROLES.map(r => <option key={r} value={r}>{roleLabels[r]}</option>)}
                 </select>
               </div>
+              {form.role === 'assistente' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Supervisor * <span className="text-slate-400 text-xs font-normal">(estagiário precisa de um líder direto)</span></label>
+                  <SupervisorPicker value={form.supervisor_id} onChange={id => setForm(f => ({ ...f, supervisor_id: id }))} required />
+                </div>
+              )}
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 border border-slate-200 text-slate-600 py-2.5 rounded-xl text-sm font-medium">Cancelar</button>
                 <button type="submit" disabled={saving} className="flex-1 bg-brand text-white py-2.5 rounded-xl text-sm font-medium hover:bg-brand-light disabled:opacity-60">
@@ -172,4 +216,9 @@ export default function Users() {
       )}
     </div>
   )
+}
+
+// Variante inline compacta para a tabela
+function SupervisorPickerInline({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
+  return <SupervisorPicker value={value} onChange={onChange} className="text-xs py-1.5" />
 }

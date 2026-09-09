@@ -14,7 +14,7 @@ interface AuthContextType {
   refreshAuth: () => Promise<void>
 }
 
-const INTERNAL_ROLES = ['socio', 'administrador', 'advogado', 'assistente']
+const INTERNAL_ROLES = ['socio', 'advogado', 'assistente']
 const CLIENT_ROLES = ['cliente_owner', 'cliente_member']
 
 const AuthContext = createContext<AuthContextType>({
@@ -166,7 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const isAdmin = useMemo(
-    () => profile?.role === 'socio' || profile?.role === 'administrador',
+    () => profile?.role === 'socio',
     [profile?.role]
   )
 

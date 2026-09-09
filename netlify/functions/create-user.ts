@@ -64,10 +64,18 @@ export default async (req: Request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     })
 
-    const { email, password, full_name, role } = await req.json()
+    const { email, password, full_name, role, supervisor_id } = await req.json()
 
     if (!email || !password || !full_name || !role) {
       return new Response(JSON.stringify({ error: "Campos obrigatórios: email, password, full_name, role" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      })
+    }
+
+    // Estagiário obrigatoriamente tem supervisor
+    if (role === "assistente" && !supervisor_id) {
+      return new Response(JSON.stringify({ error: "Estagiário precisa ter supervisor definido" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       })
@@ -87,6 +95,23 @@ export default async (req: Request) => {
         status: 400,
         headers: { "Content-Type": "application/json" },
       })
+    }
+
+    // Se estagiário, vincula supervisor (UPDATE explícito — sem race porque server-side é sequencial)
+    if (data.user && role === "assistente" && supervisor_id) {
+      const { error: supervisorError } = await supabaseAdmin
+        .from("profiles")
+        .update({ supervisor_id })
+        .eq("id", data.user.id)
+
+      if (supervisorError) {
+        // Rollback: deleta o usuário criado
+        await supabaseAdmin.auth.admin.deleteUser(data.user.id)
+        return new Response(JSON.stringify({ error: "Falha ao vincular supervisor: " + supervisorError.message }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        })
+      }
     }
 
     return new Response(

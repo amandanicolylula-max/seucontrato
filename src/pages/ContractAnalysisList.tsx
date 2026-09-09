@@ -13,10 +13,12 @@ const RISK_CONFIG = {
   baixo: { label: 'Risco Baixo', cls: 'bg-green-100 text-green-700' },
 }
 const STATUS_CONFIG = {
-  processando: { label: 'Processando…', cls: 'bg-blue-100 text-blue-700' },
-  rascunho:    { label: 'Rascunho',     cls: 'bg-slate-100 text-slate-600' },
-  finalizado:  { label: 'Finalizado',   cls: 'bg-emerald-100 text-emerald-700' },
-  falhou:      { label: 'Falhou',       cls: 'bg-red-100 text-red-600' },
+  processando:         { label: 'Processando…',      cls: 'bg-blue-100 text-blue-700' },
+  rascunho_estagiario: { label: 'Rascunho estagiário', cls: 'bg-purple-100 text-purple-700' },
+  aguardando_revisao:  { label: 'Aguardando revisão', cls: 'bg-amber-100 text-amber-700' },
+  rascunho:            { label: 'Rascunho',           cls: 'bg-slate-100 text-slate-600' },
+  finalizado:          { label: 'Finalizado',         cls: 'bg-emerald-100 text-emerald-700' },
+  falhou:              { label: 'Falhou',             cls: 'bg-red-100 text-red-600' },
 }
 
 export default function ContractAnalysisList() {
