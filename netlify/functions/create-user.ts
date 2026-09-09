@@ -73,11 +73,13 @@ export default async (req: Request) => {
       })
     }
 
+    // Trigger `handle_new_user` lê role e full_name de user_metadata
+    // e insere no profile automaticamente.
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name },
+      user_metadata: { full_name, role },
     })
 
     if (error) {
@@ -85,14 +87,6 @@ export default async (req: Request) => {
         status: 400,
         headers: { "Content-Type": "application/json" },
       })
-    }
-
-    // Update role (trigger creates as 'assistente' by default)
-    if (data.user) {
-      await supabaseAdmin
-        .from("profiles")
-        .update({ role, full_name })
-        .eq("id", data.user.id)
     }
 
     return new Response(
