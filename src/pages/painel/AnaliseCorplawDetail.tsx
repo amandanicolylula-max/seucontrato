@@ -5,6 +5,7 @@ import { ContractAnalysis } from '@/types'
 import type { AnaliseDocumento, Gravidade } from '@/lib/corplaw/types'
 import { gerarHTML } from '@/lib/corplaw/gerarHTML'
 import { AnalysisStatusBadge } from '@/components/analysis/AnalysisStatusBadge'
+import { ChatLateral } from '@/components/analysis-corplaw/ChatLateral'
 import { useAuth } from '@/hooks/useAuth'
 import {
   ArrowLeft, Download, CheckCircle2, Loader2, Send, AlertCircle, Trash2,
@@ -57,18 +58,35 @@ export default function AnaliseCorplawDetail() {
   }, [id, load])
 
   const perms = useMemo(() => {
-    if (!analysis || !profile) return { canSubmit: false, canApprove: false, canDelete: false }
+    if (!analysis || !profile) return { canSubmit: false, canApprove: false, canDelete: false, chatEnabled: false, chatReason: '' }
     const isAuthor = analysis.created_by === profile.id
     const isReviewer = analysis.reviewer_id === profile.id
     const isSocio = profile.role === 'socio'
     const isAssistente = profile.role === 'assistente'
-    let canSubmit = false, canApprove = false
+    let canSubmit = false, canApprove = false, chatEnabled = false, chatReason = ''
     switch (analysis.status) {
-      case 'rascunho_estagiario': canSubmit = isAuthor && isAssistente; break
-      case 'aguardando_revisao':  canApprove = isReviewer || isSocio; break
-      case 'rascunho':            canApprove = isAuthor || isSocio; break
+      case 'rascunho_estagiario':
+        canSubmit = isAuthor && isAssistente
+        chatEnabled = isAuthor && isAssistente
+        if (!chatEnabled) chatReason = 'Chat só disponível para o autor estagiário'
+        break
+      case 'aguardando_revisao':
+        canApprove = isReviewer || isSocio
+        chatEnabled = isReviewer || isSocio
+        if (!chatEnabled) chatReason = 'Chat só disponível para o supervisor'
+        break
+      case 'rascunho':
+        canApprove = isAuthor || isSocio
+        chatEnabled = isAuthor || isSocio
+        if (!chatEnabled) chatReason = 'Chat só disponível para o autor'
+        break
+      case 'finalizado':
+        chatReason = 'Análise finalizada — chat desabilitado'
+        break
+      default:
+        chatReason = 'Chat indisponível neste status'
     }
-    return { canSubmit, canApprove, canDelete: isSocio || (profile.role === 'advogado' && isAuthor) }
+    return { canSubmit, canApprove, canDelete: isSocio || (profile.role === 'advogado' && isAuthor), chatEnabled, chatReason }
   }, [analysis, profile])
 
   const handleSubmitReview = async () => {
@@ -154,9 +172,10 @@ export default function AnaliseCorplawDetail() {
   }
 
   const analise = (analysis.edited_sections || analysis.ai_sections) as unknown as AnaliseDocumento
+  const showChat = !!analise
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className={clsx(showChat ? 'max-w-none' : 'max-w-5xl mx-auto', 'space-y-6')}>
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
@@ -219,33 +238,46 @@ export default function AnaliseCorplawDetail() {
         </div>
       )}
 
-      {/* Tabs */}
+      {/* Split: análise + chat lateral (quando aplicável) */}
       {analise && (
-        <>
-          <div className="border-b border-slate-200">
-            <nav className="flex gap-1 -mb-px overflow-x-auto">
-              {([
-                { key: 'resumo', label: 'Resumo' },
-                { key: 'matriz', label: 'Matriz de risco' },
-                { key: 'riscos', label: `Riscos (${analise.riscos?.length || 0})` },
-                { key: 'recomendacoes', label: `Recomendações (${analise.recomendacoes_prioritarias?.length || 0})` },
-                { key: 'avaliacao', label: 'Avaliação' },
-              ] as { key: TabKey; label: string }[]).map(t => (
-                <button key={t.key} onClick={() => setTab(t.key)}
-                  className={clsx('px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
-                    tab === t.key ? 'border-accent text-accent' : 'border-transparent text-slate-500 hover:text-navy-800')}>
-                  {t.label}
-                </button>
-              ))}
-            </nav>
+        <div className={clsx('grid gap-6', showChat ? 'grid-cols-1 lg:grid-cols-[1fr_380px]' : 'grid-cols-1')}>
+          <div className="min-w-0 space-y-4">
+            <div className="border-b border-slate-200">
+              <nav className="flex gap-1 -mb-px overflow-x-auto">
+                {([
+                  { key: 'resumo', label: 'Resumo' },
+                  { key: 'matriz', label: 'Matriz de risco' },
+                  { key: 'riscos', label: `Riscos (${analise.riscos?.length || 0})` },
+                  { key: 'recomendacoes', label: `Recomendações (${analise.recomendacoes_prioritarias?.length || 0})` },
+                  { key: 'avaliacao', label: 'Avaliação' },
+                ] as { key: TabKey; label: string }[]).map(t => (
+                  <button key={t.key} onClick={() => setTab(t.key)}
+                    className={clsx('px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
+                      tab === t.key ? 'border-accent text-accent' : 'border-transparent text-slate-500 hover:text-navy-800')}>
+                    {t.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {tab === 'resumo' && <TabResumo analise={analise} />}
+            {tab === 'matriz' && <TabMatriz analise={analise} />}
+            {tab === 'riscos' && <TabRiscos analise={analise} expanded={expanded} toggle={toggleExpanded} />}
+            {tab === 'recomendacoes' && <TabRecomendacoes analise={analise} />}
+            {tab === 'avaliacao' && <TabAvaliacao analise={analise} />}
           </div>
 
-          {tab === 'resumo' && <TabResumo analise={analise} />}
-          {tab === 'matriz' && <TabMatriz analise={analise} />}
-          {tab === 'riscos' && <TabRiscos analise={analise} expanded={expanded} toggle={toggleExpanded} />}
-          {tab === 'recomendacoes' && <TabRecomendacoes analise={analise} />}
-          {tab === 'avaliacao' && <TabAvaliacao analise={analise} />}
-        </>
+          {showChat && (
+            <div className="h-[600px] lg:sticky lg:top-4 lg:h-[calc(100vh-8rem)]">
+              <ChatLateral
+                analysisId={analysis.id}
+                disabled={!perms.chatEnabled}
+                disabledReason={perms.chatReason}
+                onAnaliseUpdated={() => load()}
+              />
+            </div>
+          )}
+        </div>
       )}
 
       {/* Ações principais */}
