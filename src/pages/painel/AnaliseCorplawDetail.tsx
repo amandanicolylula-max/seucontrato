@@ -301,7 +301,7 @@ export default function AnaliseCorplawDetail() {
 
 // ─── Subcomponents ────────────────────────────────────────────────────────
 
-function KpiCard({ icon: Icon, label, value, color }: { icon: typeof AlertTriangle; label: string; value: string; color: string }) {
+export function KpiCard({ icon: Icon, label, value, color }: { icon: typeof AlertTriangle; label: string; value: string; color: string }) {
   return (
     <div className={clsx('rounded-2xl p-4', color)}>
       <div className="flex items-center gap-2 mb-2 opacity-80"><Icon className="w-4 h-4" /><span className="text-xs uppercase tracking-wider font-semibold">{label}</span></div>
@@ -310,7 +310,7 @@ function KpiCard({ icon: Icon, label, value, color }: { icon: typeof AlertTriang
   )
 }
 
-function TabResumo({ analise }: { analise: AnaliseDocumento }) {
+export function TabResumo({ analise }: { analise: AnaliseDocumento }) {
   return (
     <div className="space-y-4">
       <Section title="Objeto">{analise.objeto}</Section>
@@ -349,7 +349,7 @@ function TabResumo({ analise }: { analise: AnaliseDocumento }) {
   )
 }
 
-function TabMatriz({ analise }: { analise: AnaliseDocumento }) {
+export function TabMatriz({ analise }: { analise: AnaliseDocumento }) {
   const PROB_INDEX = { 'Baixa': 0, 'Média': 1, 'Alta': 2, 'Muito Alta': 3 } as const
   const IMP_INDEX = { 'Baixo': 0, 'Médio': 1, 'Alto': 2, 'Muito Alto': 3 } as const
   const grid: string[][][] = Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => [] as string[]))
@@ -391,7 +391,7 @@ function TabMatriz({ analise }: { analise: AnaliseDocumento }) {
   )
 }
 
-function TabRiscos({ analise, expanded, toggle }: { analise: AnaliseDocumento; expanded: Set<string>; toggle: (c: string) => void }) {
+export function TabRiscos({ analise, expanded, toggle }: { analise: AnaliseDocumento; expanded: Set<string>; toggle: (c: string) => void }) {
   return (
     <div className="space-y-3">
       {(analise.riscos || []).map(r => {
@@ -435,7 +435,7 @@ function TabRiscos({ analise, expanded, toggle }: { analise: AnaliseDocumento; e
   )
 }
 
-function TabRecomendacoes({ analise }: { analise: AnaliseDocumento }) {
+export function TabRecomendacoes({ analise }: { analise: AnaliseDocumento }) {
   return (
     <div className="space-y-3">
       {(analise.recomendacoes_prioritarias || []).map((r, i) => (
@@ -451,7 +451,7 @@ function TabRecomendacoes({ analise }: { analise: AnaliseDocumento }) {
   )
 }
 
-function TabAvaliacao({ analise }: { analise: AnaliseDocumento }) {
+export function TabAvaliacao({ analise }: { analise: AnaliseDocumento }) {
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6">
       <div className="flex items-center gap-3 mb-4">

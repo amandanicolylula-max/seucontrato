@@ -23,6 +23,9 @@ import ClienteDetalhe from '@/pages/ClienteDetalhe'
 import AnaliseCorplawList from '@/pages/painel/AnaliseCorplawList'
 import AnaliseCorplawNew from '@/pages/painel/AnaliseCorplawNew'
 import AnaliseCorplawDetail from '@/pages/painel/AnaliseCorplawDetail'
+import AnaliseHibridaList from '@/pages/painel/AnaliseHibridaList'
+import AnaliseHibridaNew from '@/pages/painel/AnaliseHibridaNew'
+import AnaliseHibridaDetail from '@/pages/painel/AnaliseHibridaDetail'
 import PlanoCliente from '@/pages/client/PlanoCliente'
 import CreditosCliente from '@/pages/client/CreditosCliente'
 import Profile from '@/pages/Profile'
@@ -125,6 +128,9 @@ function AppRoutes() {
         <Route path="/painel/analise-corplaw" element={<AnaliseCorplawList />} />
         <Route path="/painel/analise-corplaw/nova" element={<AnaliseCorplawNew />} />
         <Route path="/painel/analise-corplaw/:id" element={<AnaliseCorplawDetail />} />
+        <Route path="/painel/analise-hibrida" element={<AnaliseHibridaList />} />
+        <Route path="/painel/analise-hibrida/nova" element={<AnaliseHibridaNew />} />
+        <Route path="/painel/analise-hibrida/:id" element={<AnaliseHibridaDetail />} />
         <Route path="/painel/banco-de-problemas" element={<BancoProblemas />} />
         <Route path="/painel/equipe-interna" element={<AdminRoute><EquipeInterna /></AdminRoute>} />
         <Route path="/painel/clientes-plataforma" element={<ClientesPlataforma />} />

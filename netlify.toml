@@ -20,6 +20,9 @@
 [functions."analyze-corplaw-background"]
   timeout = 900
 
+[functions."analyze-hibrida-background"]
+  timeout = 900
+
 [functions."analyze-problem-background"]
   timeout = 120
 
@@ -39,6 +42,12 @@
 [[redirects]]
   from = "/api/analyze-corplaw"
   to = "/.netlify/functions/analyze-corplaw-background"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/analyze-hibrida"
+  to = "/.netlify/functions/analyze-hibrida-background"
   status = 200
   force = true
 

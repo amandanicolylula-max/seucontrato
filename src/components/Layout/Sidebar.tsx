@@ -63,6 +63,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         { to: '/painel/clientes', icon: Briefcase, label: 'Clientes (registros)' },
         { to: '/painel/analise', icon: FileScan, label: 'Análises' },
         { to: '/painel/analise-corplaw', icon: FileScan, label: 'Análise Corplaw [BETA]' },
+        { to: '/painel/analise-hibrida', icon: FileScan, label: 'Análise Híbrida [BETA]' },
         { to: '/painel/banco-de-problemas', icon: ShieldAlert, label: 'Banco de Problemas' },
         { to: '/painel/oportunidades', icon: Scale, label: 'Oportunidades' },
         { to: '/painel/alertas', icon: Bell, label: 'Alertas' },
