@@ -8,6 +8,7 @@ import { ClientGuard } from '@/guards/ClientGuard'
 import { RoleRedirect } from '@/guards/RoleRedirect'
 import Login from '@/pages/Login'
 import CadastroCliente from '@/pages/CadastroCliente'
+import AcceptInvite from '@/pages/AcceptInvite'
 import Dashboard from '@/pages/Dashboard'
 import Contracts from '@/pages/Contracts'
 import ContractUpload from '@/pages/ContractUpload'
@@ -78,7 +79,12 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 function LoginRoute() {
   const { isAuthenticated } = useAuth()
-  if (isAuthenticated) return <Navigate to="/" replace />
+  if (isAuthenticated) {
+    // Se veio com ?redirect=... vamos permitir renderizar o Login para poder mudar de conta.
+    // Mas se estiver logado sem redirect, vai pra home dele.
+    const params = new URLSearchParams(window.location.search)
+    if (!params.get('redirect')) return <Navigate to="/" replace />
+  }
   return <Login />
 }
 
@@ -95,6 +101,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/cadastro" element={<CadastroRoute />} />
+      <Route path="/invite/:token" element={<AcceptInvite />} />
       <Route path="/" element={<ProtectedRoute><RoleRedirect /></ProtectedRoute>} />
 
       {/* Corpo jurídico (interno) */}

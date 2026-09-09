@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -11,7 +11,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const { refreshAuth } = useAuth()
+  const redirectTo = params.get('redirect')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,7 +24,8 @@ export default function Login() {
       setLoading(false)
     } else {
       await refreshAuth()
-      navigate('/', { replace: true })
+      // Se veio de um convite, redireciona pra lá; senão pra raiz (RoleRedirect decide)
+      navigate(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/', { replace: true })
     }
   }
 
