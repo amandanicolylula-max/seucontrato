@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Plus, Search, FileSearch, ChevronRight, Calendar, User, Trash2 } from 'lucide-react'
@@ -6,6 +6,8 @@ import { ContractAnalysis } from '@/types'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import toast from 'react-hot-toast'
+import { useAuth } from '@/hooks/useAuth'
+import clsx from 'clsx'
 
 const RISK_CONFIG = {
   alto:  { label: 'Risco Alto',  cls: 'bg-red-100 text-red-700' },
@@ -21,10 +23,13 @@ const STATUS_CONFIG = {
   falhou:              { label: 'Falhou',             cls: 'bg-red-100 text-red-600' },
 }
 
+type TabKey = 'minha_fila' | 'todas'
+
 export default function ContractAnalysisList() {
+  const { profile } = useAuth()
   const [analyses, setAnalyses] = useState<ContractAnalysis[]>([])
-  const [filtered, setFiltered] = useState<ContractAnalysis[]>([])
   const [search, setSearch] = useState('')
+  const [tab, setTab] = useState<TabKey>('minha_fila')
   const [loading, setLoading] = useState(true)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -32,10 +37,10 @@ export default function ContractAnalysisList() {
   const load = async () => {
     const { data, error } = await supabase
       .from('contract_analyses')
-      .select('*, clients(name)')
+      .select('*, clients(name), author:created_by(id, full_name), reviewer:reviewer_id(id, full_name)')
       .order('created_at', { ascending: false })
     if (error) toast.error('Erro ao carregar análises')
-    else { setAnalyses(data || []); setFiltered(data || []) }
+    else setAnalyses(data || [])
     setLoading(false)
   }
 
@@ -52,14 +57,42 @@ export default function ContractAnalysisList() {
     setDeleting(false)
   }
 
-  useEffect(() => {
-    if (!search.trim()) { setFiltered(analyses); return }
-    const q = search.toLowerCase()
-    setFiltered(analyses.filter(a =>
-      a.title.toLowerCase().includes(q) ||
-      a.clients?.name?.toLowerCase().includes(q)
-    ))
-  }, [search, analyses])
+  const filtered = useMemo(() => {
+    let list = analyses
+
+    // Filtro por aba
+    if (tab === 'minha_fila' && profile) {
+      if (profile.role === 'assistente') {
+        // Estagiário vê suas próprias análises (drafts + aguardando)
+        list = list.filter(a =>
+          a.created_by === profile.id &&
+          ['rascunho_estagiario', 'aguardando_revisao'].includes(a.status)
+        )
+      } else if (profile.role === 'advogado') {
+        // Advogado vê análises aguardando sua revisão + seus próprios drafts
+        list = list.filter(a =>
+          (a.status === 'aguardando_revisao' && a.reviewer_id === profile.id) ||
+          (a.status === 'rascunho' && a.created_by === profile.id)
+        )
+      } else if (profile.role === 'socio') {
+        // Sócio vê todas as pendentes (aguardando + rascunhos)
+        list = list.filter(a =>
+          ['aguardando_revisao', 'rascunho', 'rascunho_estagiario'].includes(a.status)
+        )
+      }
+    }
+
+    // Filtro por busca
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter(a =>
+        a.title.toLowerCase().includes(q) ||
+        a.clients?.name?.toLowerCase().includes(q)
+      )
+    }
+
+    return list
+  }, [analyses, tab, search, profile])
 
   return (
     <div className="space-y-6">
@@ -75,6 +108,29 @@ export default function ContractAnalysisList() {
         >
           <Plus className="w-4 h-4" /> Nova Análise
         </Link>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-slate-200">
+        <nav className="flex gap-1 -mb-px">
+          {([
+            { key: 'minha_fila' as TabKey, label: 'Minha fila' },
+            { key: 'todas' as TabKey, label: 'Todas as análises' },
+          ]).map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={clsx(
+                'px-4 py-3 text-sm font-medium border-b-2 transition-colors',
+                tab === t.key
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-slate-500 hover:text-navy-800 hover:border-slate-200'
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
       </div>
 
       {/* Search */}

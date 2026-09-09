@@ -69,7 +69,7 @@ export default function ContractAnalysisNew() {
         { event: 'UPDATE', schema: 'public', table: 'contract_analyses', filter: `id=eq.${analysisId}` },
         (payload) => {
           const status = (payload.new as { status: string }).status
-          if (status === 'rascunho' || status === 'finalizado') {
+          if (status === 'rascunho' || status === 'rascunho_estagiario' || status === 'finalizado') {
             cleanup()
             navigate(`/painel/analise/${analysisId}`)
           } else if (status === 'falhou') {

@@ -208,14 +208,37 @@ export const handler = async (event: { body: string; headers: Record<string, str
     const riskLevel = riskRaw.includes("alto") ? "alto"
       : riskRaw.includes("baixo") ? "baixo" : "medio"
 
+    // ── Determina status inicial baseado no role do autor ─────────────────
+    // Se o autor é estagiário, análise vai pra 'rascunho_estagiario' com
+    // reviewer_id = supervisor do estagiário. Caso contrário, 'rascunho'.
+    let initialStatus = "rascunho"
+    let reviewerId: string | null = null
+    const { data: currentAnalysis } = await supabase
+      .from("contract_analyses")
+      .select("created_by")
+      .eq("id", analysisId)
+      .single()
+    if (currentAnalysis?.created_by) {
+      const { data: authorProfile } = await supabase
+        .from("profiles")
+        .select("role, supervisor_id")
+        .eq("id", currentAnalysis.created_by)
+        .single()
+      if (authorProfile?.role === "assistente") {
+        initialStatus = "rascunho_estagiario"
+        reviewerId = authorProfile.supervisor_id
+      }
+    }
+
     // ── Salva resultado no banco ───────────────────────────────────────────
     await supabase
       .from("contract_analyses")
       .update({
         ai_sections: parsed,
         edited_sections: parsed,
-        status: "rascunho",
+        status: initialStatus,
         risk_level: riskLevel,
+        reviewer_id: reviewerId,
         updated_at: new Date().toISOString(),
       })
       .eq("id", analysisId)
