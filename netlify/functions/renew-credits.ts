@@ -31,6 +31,5 @@ function json(body: unknown, status: number) {
 }
 
 export const config: Config = {
-  path: "/api/renew-credits",
-  schedule: "0 6 * * *", // 06:00 UTC = 03:00 BRT
+  schedule: "0 6 * * *", // 06:00 UTC = 03:00 BRT (funções scheduled não aceitam path custom)
 }
