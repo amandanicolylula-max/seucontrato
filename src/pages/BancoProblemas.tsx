@@ -1,15 +1,16 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
-import { ContractProblem, Client, MissingClause } from '@/types'
+import { ContractProblem, Client, MissingClause, ProblemResolutionStatus } from '@/types'
 import {
   Plus, Search, ShieldAlert, ChevronDown, ChevronUp,
   X, Loader2, Building2, Calendar, DollarSign, FileText,
-  AlertTriangle, Pencil, Trash2, RefreshCw
+  AlertTriangle, Pencil, Trash2, RefreshCw, TrendingUp
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import clsx from 'clsx'
 
 const CATEGORIES = [
   { value: 'multa',         label: 'Multa' },
@@ -31,6 +32,16 @@ const CAT_COLORS: Record<string, string> = {
   outro:         'bg-slate-100 text-slate-600',
 }
 
+const STATUS_OPTIONS: { value: ProblemResolutionStatus; label: string; cls: string }[] = [
+  { value: 'aberto',             label: 'Aberto',            cls: 'bg-slate-100 text-slate-600' },
+  { value: 'em_acompanhamento',  label: 'Em acompanhamento', cls: 'bg-blue-100 text-blue-700' },
+  { value: 'prevenido',          label: 'Prevenido',         cls: 'bg-emerald-100 text-emerald-700' },
+  { value: 'materializou',       label: 'Materializou',      cls: 'bg-red-100 text-red-700' },
+  { value: 'resolvido',          label: 'Resolvido',         cls: 'bg-navy-100 text-navy-700' },
+]
+
+interface WorkspaceOption { id: string; nome: string }
+
 // ─── Card de problema individual ─────────────────────────────────────────────
 function ProblemCard({
   problem,
@@ -45,6 +56,7 @@ function ProblemCard({
   const catLabel = CATEGORIES.find(c => c.value === problem.impact_category)?.label || problem.impact_category
   const catColor = CAT_COLORS[problem.impact_category] || CAT_COLORS.outro
   const pendingAI = !problem.ai_analyzed_at
+  const statusInfo = STATUS_OPTIONS.find(s => s.value === (problem.resolution_status || 'aberto'))
 
   return (
     <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white">
@@ -59,6 +71,11 @@ function ProblemCard({
               <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${catColor}`}>
                 {catLabel}
               </span>
+              {statusInfo && (
+                <span className={clsx('text-xs font-medium px-2.5 py-0.5 rounded-full', statusInfo.cls)}>
+                  {statusInfo.label}
+                </span>
+              )}
               {problem.contract_type && (
                 <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
                   {problem.contract_type}
@@ -86,6 +103,11 @@ function ProblemCard({
                   <FileText className="w-3 h-3" />{problem.clients.name}
                 </span>
               )}
+              {problem.workspaces?.nome && (
+                <span className="flex items-center gap-1 text-xs text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+                  <Building2 className="w-3 h-3" />{problem.workspaces.nome}
+                </span>
+              )}
               {problem.event_date && (
                 <span className="flex items-center gap-1 text-xs text-slate-400">
                   <Calendar className="w-3 h-3" />
@@ -96,6 +118,12 @@ function ProblemCard({
                 <span className="flex items-center gap-1 text-xs font-medium text-red-600">
                   <DollarSign className="w-3 h-3" />
                   R$ {Number(problem.financial_impact).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+              )}
+              {problem.economia_gerada != null && problem.economia_gerada > 0 && (
+                <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
+                  <TrendingUp className="w-3 h-3" />
+                  R$ {Number(problem.economia_gerada).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} evitados
                 </span>
               )}
             </div>
@@ -188,6 +216,9 @@ type FormState = {
   impact_category: string
   event_date: string
   financial_impact: string
+  economia_gerada: string
+  resolution_status: ProblemResolutionStatus
+  workspace_id: string
   client_search: string
   client_id: string
   analyze_ai: boolean
@@ -196,7 +227,8 @@ type FormState = {
 const EMPTY_FORM: FormState = {
   description: '', counterparty_name: '', counterparty_document: '',
   contract_type: '', impact_category: 'outro', event_date: '',
-  financial_impact: '', client_search: '', client_id: '', analyze_ai: true,
+  financial_impact: '', economia_gerada: '', resolution_status: 'aberto',
+  workspace_id: '', client_search: '', client_id: '', analyze_ai: true,
 }
 
 function ProblemModal({
@@ -221,9 +253,12 @@ function ProblemModal({
         impact_category: editing.impact_category,
         event_date: editing.event_date || '',
         financial_impact: editing.financial_impact != null ? String(editing.financial_impact) : '',
+        economia_gerada: editing.economia_gerada != null ? String(editing.economia_gerada) : '',
+        resolution_status: editing.resolution_status || 'aberto',
+        workspace_id: editing.workspace_id || '',
         client_search: editing.clients?.name || '',
         client_id: editing.client_id || '',
-        analyze_ai: !editing.ai_analyzed_at, // só oferecer IA se ainda não foi analisado
+        analyze_ai: !editing.ai_analyzed_at,
       }
     }
     return EMPTY_FORM
@@ -232,6 +267,13 @@ function ProblemModal({
   const [clients, setClients] = useState<Client[]>([])
   const [showClientList, setShowClientList] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [workspacesList, setWorkspacesList] = useState<WorkspaceOption[]>([])
+
+  useEffect(() => {
+    supabase.from('workspaces').select('id, nome').order('nome').then(({ data }) => {
+      setWorkspacesList((data as WorkspaceOption[]) || [])
+    })
+  }, [])
 
   const loadClients = async (q: string) => {
     if (!q) { setClients([]); return }
@@ -248,6 +290,7 @@ function ProblemModal({
     if (!form.description.trim()) { toast.error('Descreva o problema'); return }
     setSaving(true)
 
+    const showsSavings = form.resolution_status === 'prevenido' || form.resolution_status === 'resolvido'
     const payload = {
       description: form.description.trim(),
       counterparty_name: form.counterparty_name.trim() || null,
@@ -258,6 +301,11 @@ function ProblemModal({
       financial_impact: form.financial_impact
         ? parseFloat(form.financial_impact.replace(',', '.'))
         : null,
+      economia_gerada: showsSavings && form.economia_gerada
+        ? parseFloat(form.economia_gerada.replace(',', '.'))
+        : null,
+      resolution_status: form.resolution_status,
+      workspace_id: form.workspace_id || null,
       client_id: form.client_id || null,
     }
 
@@ -409,6 +457,51 @@ function ProblemModal({
             </div>
           </div>
 
+          {/* Status + Empresa contratante */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Status</label>
+              <select
+                value={form.resolution_status}
+                onChange={e => set('resolution_status', e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              >
+                {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                Empresa contratante afetada <span className="text-slate-400 font-normal">(workspace)</span>
+              </label>
+              <select
+                value={form.workspace_id}
+                onChange={e => set('workspace_id', e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              >
+                <option value="">— nenhum (problema histórico interno) —</option>
+                {workspacesList.map(w => <option key={w.id} value={w.id}>{w.nome}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Economia gerada — condicional se status = prevenido/resolvido */}
+          {(form.resolution_status === 'prevenido' || form.resolution_status === 'resolvido') && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+              <label className="block text-sm font-medium text-emerald-800 mb-1.5">
+                Economia gerada (R$) <span className="text-emerald-600 font-normal text-xs">— quanto o CorpLaw evitou de perda</span>
+              </label>
+              <input
+                value={form.economia_gerada}
+                onChange={e => set('economia_gerada', e.target.value)}
+                placeholder="0,00"
+                className="w-full border border-emerald-200 bg-white rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-500"
+              />
+              <p className="text-xs text-emerald-700 mt-1.5">
+                Esse valor entra no relatório anual de valor gerado que a CorpLaw apresenta ao cliente.
+              </p>
+            </div>
+          )}
+
           {/* Cliente */}
           <div className="relative">
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
@@ -485,6 +578,9 @@ export default function BancoProblemas() {
   const [filtered, setFiltered] = useState<ContractProblem[]>([])
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [workspaceFilter, setWorkspaceFilter] = useState('')
+  const [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProblem, setEditingProblem] = useState<ContractProblem | null>(null)
@@ -492,11 +588,17 @@ export default function BancoProblemas() {
   const load = useCallback(async () => {
     const { data, error } = await supabase
       .from('contract_problems')
-      .select('*, clients(name)')
+      .select('*, clients(name), workspaces(nome)')
       .order('created_at', { ascending: false })
     if (error) toast.error('Erro ao carregar banco de problemas')
     else { setProblems(data || []); setFiltered(data || []) }
     setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    supabase.from('workspaces').select('id, nome').order('nome').then(({ data }) => {
+      setWorkspaces((data as WorkspaceOption[]) || [])
+    })
   }, [])
 
   useEffect(() => {
@@ -523,12 +625,15 @@ export default function BancoProblemas() {
         p.description.toLowerCase().includes(q) ||
         p.counterparty_name?.toLowerCase().includes(q) ||
         p.contract_type?.toLowerCase().includes(q) ||
-        p.clients?.name?.toLowerCase().includes(q)
+        p.clients?.name?.toLowerCase().includes(q) ||
+        p.workspaces?.nome?.toLowerCase().includes(q)
       )
     }
     if (catFilter) result = result.filter(p => p.impact_category === catFilter)
+    if (statusFilter) result = result.filter(p => (p.resolution_status || 'aberto') === statusFilter)
+    if (workspaceFilter) result = result.filter(p => p.workspace_id === workspaceFilter)
     setFiltered(result)
-  }, [search, catFilter, problems])
+  }, [search, catFilter, statusFilter, workspaceFilter, problems])
 
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este problema?')) return
@@ -549,6 +654,7 @@ export default function BancoProblemas() {
 
   // Métricas
   const totalImpact = problems.reduce((sum, p) => sum + (p.financial_impact || 0), 0)
+  const totalEconomia = problems.reduce((sum, p) => sum + (p.economia_gerada || 0), 0)
   const typeCounts = problems.reduce<Record<string, number>>((acc, p) => {
     if (p.contract_type) acc[p.contract_type] = (acc[p.contract_type] || 0) + 1
     return acc
@@ -580,7 +686,7 @@ export default function BancoProblemas() {
 
       {/* Métricas */}
       {problems.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -607,6 +713,16 @@ export default function BancoProblemas() {
             </p>
             <p className="text-xs text-slate-400">soma dos impactos informados</p>
           </div>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="w-4 h-4 text-emerald-600" />
+              <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Economia gerada</span>
+            </div>
+            <p className="text-lg font-semibold text-emerald-800">
+              R$ {totalEconomia.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </p>
+            <p className="text-xs text-emerald-600">valor evitado para os clientes</p>
+          </div>
         </div>
       )}
 
@@ -629,9 +745,25 @@ export default function BancoProblemas() {
           <option value="">Todas as categorias</option>
           {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
-        {(search || catFilter) && (
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+          className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+        >
+          <option value="">Todos os status</option>
+          {STATUS_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+        <select
+          value={workspaceFilter}
+          onChange={e => setWorkspaceFilter(e.target.value)}
+          className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+        >
+          <option value="">Todos os clientes</option>
+          {workspaces.map(w => <option key={w.id} value={w.id}>{w.nome}</option>)}
+        </select>
+        {(search || catFilter || statusFilter || workspaceFilter) && (
           <button
-            onClick={() => { setSearch(''); setCatFilter('') }}
+            onClick={() => { setSearch(''); setCatFilter(''); setStatusFilter(''); setWorkspaceFilter('') }}
             className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 px-3 py-2 rounded-xl hover:bg-slate-100 transition-colors"
           >
             <X className="w-3.5 h-3.5" /> Limpar

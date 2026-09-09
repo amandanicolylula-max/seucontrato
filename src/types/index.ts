@@ -168,6 +168,8 @@ export interface MissingClause {
   suggested_text?: string
 }
 
+export type ProblemResolutionStatus = 'aberto' | 'em_acompanhamento' | 'prevenido' | 'materializou' | 'resolvido'
+
 export interface ContractProblem {
   id: string
   client_id?: string
@@ -178,6 +180,9 @@ export interface ContractProblem {
   event_date?: string
   description: string
   financial_impact?: number
+  economia_gerada?: number
+  resolution_status?: ProblemResolutionStatus
+  workspace_id?: string
   impact_category: 'multa' | 'rescisão' | 'litígio' | 'inadimplência' | 'reajuste' | 'garantia' | 'outro'
   missing_clauses?: MissingClause[]
   ai_recommendations?: string
@@ -186,4 +191,5 @@ export interface ContractProblem {
   created_at: string
   clients?: Client
   contracts?: Contract
+  workspaces?: { nome: string }
 }
