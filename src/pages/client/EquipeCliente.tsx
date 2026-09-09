@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Users, UserPlus, Mail, X, Trash2, ShieldOff, Shield, Copy, Check } from 'lucide-react'
-import { Profile, MemberCreditLimit } from '@/types'
+import { Users, UserPlus, Mail, X, Trash2, ShieldOff, Shield, Copy, Check, Wallet } from 'lucide-react'
+import { Profile, MemberCreditLimit, CreditBalance } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
 import { UsageBar } from '@/components/workspace/UsageBar'
+import { totalDisponivel } from '@/lib/credits'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -27,22 +28,25 @@ export default function EquipeCliente() {
   const [members, setMembers] = useState<Profile[]>([])
   const [limits, setLimits] = useState<Map<string, MemberCreditLimit>>(new Map())
   const [invites, setInvites] = useState<Invite[]>([])
+  const [balance, setBalance] = useState<CreditBalance | null>(null)
   const [loading, setLoading] = useState(true)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [showInviteResult, setShowInviteResult] = useState<{ url: string; sent: boolean } | null>(null)
 
   const load = useCallback(async () => {
     if (!profile?.workspace_id) return
-    const [{ data: mem }, { data: lim }, { data: inv }] = await Promise.all([
+    const [{ data: mem }, { data: lim }, { data: inv }, { data: bal }] = await Promise.all([
       supabase.from('profiles').select('*').eq('workspace_id', profile.workspace_id).order('role', { ascending: false }).order('full_name'),
       supabase.from('member_credit_limits').select('*').eq('workspace_id', profile.workspace_id),
       supabase.from('workspace_invites').select('*').eq('workspace_id', profile.workspace_id).order('created_at', { ascending: false }),
+      supabase.from('credit_balances').select('*').eq('workspace_id', profile.workspace_id).maybeSingle(),
     ])
     setMembers((mem as Profile[]) || [])
     const m = new Map<string, MemberCreditLimit>()
     ;(lim || []).forEach(l => m.set(l.user_id, l))
     setLimits(m)
     setInvites((inv as Invite[]) || [])
+    setBalance(bal as CreditBalance | null)
     setLoading(false)
   }, [profile?.workspace_id])
 
@@ -94,6 +98,9 @@ export default function EquipeCliente() {
   const suspensos = members.filter(m => !m.is_active)
   const pendentes = invites.filter(i => i.status === 'pending')
 
+  const saldoTotal = totalDisponivel(balance)
+  const consumidoOrg = Array.from(limits.values()).reduce((sum, l) => sum + (l.consumido_mes || 0), 0)
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -104,6 +111,37 @@ export default function EquipeCliente() {
         <button onClick={() => setShowInviteModal(true)} className="flex items-center gap-2 bg-accent text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-accent-dark transition-all shadow-sm">
           <UserPlus className="w-4 h-4" /> Convidar colaborador
         </button>
+      </div>
+
+      {/* Card consumo agregado do workspace */}
+      <div className="bg-gradient-to-br from-navy-800 to-navy-900 text-white rounded-2xl p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+              <Wallet className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider opacity-70">Consumo do workspace este mês</p>
+              <p className="text-2xl font-bold mt-0.5">
+                {consumidoOrg.toLocaleString('pt-BR')} <span className="text-sm font-normal opacity-70">créditos gastos pela equipe</span>
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-wider opacity-70">Saldo total disponível</p>
+            <p className="text-2xl font-bold text-accent mt-0.5">{saldoTotal.toLocaleString('pt-BR')}</p>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-white/10">
+          <UsageBar
+            usado={consumidoOrg}
+            limite={consumidoOrg + saldoTotal}
+            showLabel={false}
+          />
+          <p className="text-xs opacity-60 mt-2">
+            Os créditos são compartilhados entre owner e membros. Limites por membro (abaixo) apenas restringem quanto cada um pode gastar dentro desse pool.
+          </p>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -160,7 +198,10 @@ export default function EquipeCliente() {
                       </td>
                       <td className="px-6 py-4">
                         {isOwner ? (
-                          <span className="text-xs text-slate-400">Sem limite</span>
+                          <div className="text-xs">
+                            <span className="text-slate-500">Acesso total ao pool</span>
+                            <p className="text-slate-400 text-[10px] mt-0.5">Sem limite pessoal — pode usar todo o saldo do workspace</p>
+                          </div>
                         ) : (
                           <div className="flex items-center gap-2">
                             <input
