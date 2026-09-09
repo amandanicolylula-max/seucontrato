@@ -114,7 +114,7 @@ function AppRoutes() {
         <Route path="/painel/oportunidades" element={<Opportunities />} />
         <Route path="/painel/alertas" element={<Alerts />} />
         <Route path="/painel/agenda" element={<Agenda />} />
-        <Route path="/painel/auditoria" element={<AuditLog />} />
+        <Route path="/painel/auditoria" element={<AdminRoute><AuditLog /></AdminRoute>} />
         <Route path="/painel/perfil" element={<Profile />} />
         <Route path="/painel/analise" element={<ContractAnalysisList />} />
         <Route path="/painel/analise/nova" element={<ContractAnalysisNew />} />

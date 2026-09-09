@@ -30,22 +30,41 @@ export default function AuditLog() {
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
 
-  const fetchLogs = useCallback(async (uFilter = userFilter, aFilter = actionFilter, from = dateFrom, to = dateTo) => {
+  const [scopeFilter, setScopeFilter] = useState<'' | 'internal' | 'client'>('')
+  const [workspaceFilter, setWorkspaceFilter] = useState('')
+  const [workspaces, setWorkspaces] = useState<{ id: string; nome: string }[]>([])
+
+  useEffect(() => {
+    supabase.from('workspaces').select('id, nome').order('nome').then(({ data }) => {
+      setWorkspaces(data || [])
+    })
+  }, [])
+
+  const fetchLogs = useCallback(async (
+    uFilter = userFilter,
+    aFilter = actionFilter,
+    from = dateFrom,
+    to = dateTo,
+    scope = scopeFilter,
+    wsId = workspaceFilter
+  ) => {
     setLoading(true)
     setPage(1)
     let q = supabase
       .from('audit_log')
-      .select('*, profiles(full_name, role)')
+      .select('*, profiles(full_name, role), workspaces(nome)')
       .order('created_at', { ascending: false })
       .limit(500)
     if (uFilter) q = q.eq('user_id', uFilter)
     if (aFilter) q = q.eq('action', aFilter)
     if (from) q = q.gte('created_at', from + 'T00:00:00')
     if (to) q = q.lte('created_at', to + 'T23:59:59')
+    if (scope) q = q.eq('scope', scope)
+    if (wsId) q = q.eq('workspace_id', wsId)
     const { data } = await q
     setLogs(data || [])
     setLoading(false)
-  }, [userFilter, actionFilter, dateFrom, dateTo])
+  }, [userFilter, actionFilter, dateFrom, dateTo, scopeFilter, workspaceFilter])
 
   // Carrega sem filtros no mount para popular o dropdown de usuários
   useEffect(() => { fetchLogs('', '', '', '') }, [])
@@ -60,14 +79,16 @@ export default function AuditLog() {
       .sort((a, b) => a.name.localeCompare(b.name))
   }, [logs])
 
-  const hasActiveFilters = userFilter || actionFilter || dateFrom || dateTo
+  const hasActiveFilters = userFilter || actionFilter || dateFrom || dateTo || scopeFilter || workspaceFilter
 
   const clearFilters = () => {
     setUserFilter('')
     setActionFilter('')
     setDateFrom('')
     setDateTo('')
-    fetchLogs('', '', '', '')
+    setScopeFilter('')
+    setWorkspaceFilter('')
+    fetchLogs('', '', '', '', '', '')
   }
 
   const filtered = logs // já filtrado server-side
@@ -133,6 +154,33 @@ export default function AuditLog() {
             onChange={e => setDateTo(e.target.value)}
             className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white"
           />
+        </div>
+
+        {/* Escopo */}
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-slate-500 font-medium">Escopo</label>
+          <select
+            value={scopeFilter}
+            onChange={e => setScopeFilter(e.target.value as '' | 'internal' | 'client')}
+            className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white text-slate-700 min-w-[130px]"
+          >
+            <option value="">Todos</option>
+            <option value="internal">Interno CorpLaw</option>
+            <option value="client">Cliente</option>
+          </select>
+        </div>
+
+        {/* Workspace */}
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-slate-500 font-medium">Cliente (workspace)</label>
+          <select
+            value={workspaceFilter}
+            onChange={e => setWorkspaceFilter(e.target.value)}
+            className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white text-slate-700 min-w-[180px]"
+          >
+            <option value="">Todos os clientes</option>
+            {workspaces.map(w => <option key={w.id} value={w.id}>{w.nome}</option>)}
+          </select>
         </div>
 
         {/* Buscar */}

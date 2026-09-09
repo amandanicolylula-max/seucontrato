@@ -114,7 +114,10 @@ export interface ContractAlert {
 export interface AuditLog {
   id: string; user_id?: string; action: string; entity_type: string
   entity_id?: string; old_data?: Record<string, unknown>; new_data?: Record<string, unknown>
+  workspace_id?: string
+  scope?: 'internal' | 'client'
   created_at: string; profiles?: Profile
+  workspaces?: { nome: string }
 }
 
 // ─── Módulo: Análise Contratual ───────────────────────────────────────────────
