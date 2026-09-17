@@ -102,7 +102,7 @@ export const handler = async (event: { body: string }) => {
     const client = new Anthropic({ apiKey })
     const stream = client.messages.stream({
       model: MODELO,
-      max_tokens: 32000,
+      max_tokens: 64000,
       thinking: { type: 'adaptive' },
       output_config: { effort, format: { type: 'json_schema', schema: ANALISE_JSON_SCHEMA } },
       messages: [{ role: 'user', content: contentBlocks }],
@@ -113,6 +113,9 @@ export const handler = async (event: { body: string }) => {
     if (resposta.stop_reason === 'refusal') {
       throw new Error('API recusou por segurança' + (resposta.stop_details?.explanation ? `: ${resposta.stop_details.explanation}` : ''))
     }
+    if (resposta.stop_reason === 'max_tokens') {
+      throw new Error(`Resposta cortada no limite de tokens (${resposta.usage?.output_tokens || '?'} gerados). Reduza o effort ou tente de novo.`)
+    }
 
     const texto = resposta.content
       .filter((b): b is Anthropic.TextBlock => b.type === 'text')
@@ -120,7 +123,11 @@ export const handler = async (event: { body: string }) => {
 
     if (!texto) throw new Error('Resposta vazia da IA')
 
-    const analiseBase = JSON.parse(texto)
+    let analiseBase
+    try { analiseBase = JSON.parse(texto) }
+    catch (e) {
+      throw new Error(`Falha ao parsear JSON (${texto.length} chars, stop=${resposta.stop_reason}). Final: "${texto.slice(-200)}". ${(e as Error).message}`)
+    }
     // Estende com campos híbridos vazios (preenchidos depois pelo advogado)
     const analiseHibrida = {
       ...analiseBase,
@@ -148,11 +155,16 @@ export const handler = async (event: { body: string }) => {
 
     return { statusCode: 200, body: JSON.stringify({ success: true }) }
   } catch (err) {
-    console.error('analyze-hibrida error:', err)
+    const errMsg = err instanceof Error ? (err.stack || err.message) : String(err)
+    console.error('analyze-hibrida error:', errMsg)
     if (analysisId) {
       try {
         const supabase = createClient(supabaseUrl, serviceKey)
-        await supabase.from('contract_analyses').update({ status: 'falhou', updated_at: new Date().toISOString() }).eq('id', analysisId)
+        await supabase.from('contract_analyses').update({
+          status: 'falhou',
+          ai_sections: { __debug_error: errMsg.slice(0, 4000) },
+          updated_at: new Date().toISOString(),
+        }).eq('id', analysisId)
       } catch { /* ignore */ }
     }
     return { statusCode: 500, body: String(err) }

@@ -124,7 +124,9 @@ export const handler = async (event: { body: string }) => {
 
     const stream = client.messages.stream({
       model: MODELO,
-      max_tokens: 32000,
+      // Opus 5 permite até 64k tokens de output; deixamos alto pra não cortar
+      // JSON no meio quando effort=max/xhigh (thinking consome tokens também).
+      max_tokens: 64000,
       thinking: { type: 'adaptive' },
       output_config: {
         effort,
@@ -142,6 +144,13 @@ export const handler = async (event: { body: string }) => {
       )
     }
 
+    if (resposta.stop_reason === 'max_tokens') {
+      throw new Error(
+        `Resposta cortada no limite de tokens (${resposta.usage?.output_tokens || '?'} tokens gerados). ` +
+        `Reduza o effort (max→high) ou tente novamente. O contrato pode ser longo demais pra structured output no effort atual.`
+      )
+    }
+
     const textoResposta = resposta.content
       .filter((b): b is Anthropic.TextBlock => b.type === 'text')
       .map(b => b.text)
@@ -150,7 +159,15 @@ export const handler = async (event: { body: string }) => {
 
     if (!textoResposta) throw new Error('Resposta vazia da IA')
 
-    const analise = JSON.parse(textoResposta)
+    let analise
+    try {
+      analise = JSON.parse(textoResposta)
+    } catch (e) {
+      throw new Error(
+        `Falha ao parsear JSON da resposta (${textoResposta.length} chars, stop_reason=${resposta.stop_reason}). ` +
+        `Trecho final: "${textoResposta.slice(-200)}". Erro: ${(e as Error).message}`
+      )
+    }
 
     // Mapeia gravidade máxima para nosso campo risk_level (para filtros existentes)
     const gravidadeMax = analise.riscos?.reduce((max: string, r: { gravidade: string }) => {
