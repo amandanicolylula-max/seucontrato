@@ -8,7 +8,7 @@ import { AnalysisStatusBadge } from '@/components/analysis/AnalysisStatusBadge'
 import { ChatLateral } from '@/components/analysis-corplaw/ChatLateral'
 import { useAuth } from '@/hooks/useAuth'
 import {
-  ArrowLeft, Download, CheckCircle2, Loader2, Send, AlertCircle, Trash2,
+  ArrowLeft, Download, FileText, CheckCircle2, Loader2, Send, AlertCircle, Trash2,
   Star, ChevronDown, ChevronRight, AlertTriangle, ShieldCheck, TrendingUp
 } from 'lucide-react'
 import { format } from 'date-fns'
@@ -34,6 +34,7 @@ export default function AnaliseCorplawDetail() {
   const [actionLoading, setActionLoading] = useState(false)
   const [tab, setTab] = useState<TabKey>('resumo')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [exportingPDF, setExportingPDF] = useState(false)
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
@@ -43,7 +44,7 @@ export default function AnaliseCorplawDetail() {
       .from('contract_analyses')
       .select('*, clients(name), author:created_by(id, full_name, role), reviewer:reviewer_id(id, full_name, role)')
       .eq('id', id).single()
-    if (error) { toast.error('Análise não encontrada'); navigate('/painel/analise-corplaw'); return }
+    if (error) { toast.error('Análise não encontrada'); navigate('/painel/analise'); return }
     setAnalysis(data as ContractAnalysis)
     setLoading(false)
   }, [id, navigate])
@@ -121,7 +122,7 @@ export default function AnaliseCorplawDetail() {
     if (!analysis || !confirm('Excluir esta análise?')) return
     await supabase.from('contract_analyses').delete().eq('id', analysis.id)
     toast.success('Excluída')
-    navigate('/painel/analise-corplaw')
+    navigate('/painel/analise')
   }
 
   const handleExportHTML = () => {
@@ -137,6 +138,41 @@ export default function AnaliseCorplawDetail() {
     a.click()
     URL.revokeObjectURL(url)
     toast.success('HTML gerado!')
+  }
+
+  const handleExportPDF = () => {
+    if (!analysis) return
+    const analise = (analysis.edited_sections || analysis.ai_sections) as unknown as AnaliseDocumento
+    if (!analise) { toast.error('Sem dados de análise para exportar'); return }
+    setExportingPDF(true)
+    const worker = new Worker(new URL('../../workers/corplaw-pdf.worker.ts', import.meta.url), { type: 'module' })
+    worker.onmessage = (e: MessageEvent<{ success: boolean; buffer?: ArrayBuffer; error?: string }>) => {
+      if (e.data.success && e.data.buffer) {
+        const blob = new Blob([e.data.buffer], { type: 'application/pdf' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `Parecer-${analysis.title.replace(/\s+/g, '-')}.pdf`
+        a.click()
+        URL.revokeObjectURL(url)
+        toast.success('PDF gerado!')
+      } else {
+        toast.error('Falha ao gerar PDF: ' + (e.data.error || 'erro desconhecido'))
+      }
+      setExportingPDF(false)
+      worker.terminate()
+    }
+    worker.onerror = (err) => {
+      toast.error('Erro no worker: ' + err.message)
+      setExportingPDF(false)
+      worker.terminate()
+    }
+    worker.postMessage({
+      title: analysis.title,
+      clientName: analysis.clients?.name,
+      createdAt: format(new Date(analysis.created_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR }),
+      analise,
+    })
   }
 
   const toggleExpanded = (codigo: string) => {
@@ -166,7 +202,7 @@ export default function AnaliseCorplawDetail() {
       <div className="max-w-lg mx-auto py-24 text-center">
         <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
         <p className="text-lg font-semibold text-slate-800">Falha na análise</p>
-        <Link to="/painel/analise-corplaw/nova" className="inline-block mt-4 bg-brand text-white px-6 py-2.5 rounded-xl text-sm font-medium">Nova análise</Link>
+        <Link to="/painel/analise/nova" className="inline-block mt-4 bg-brand text-white px-6 py-2.5 rounded-xl text-sm font-medium">Nova análise</Link>
       </div>
     )
   }
@@ -179,7 +215,7 @@ export default function AnaliseCorplawDetail() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <button onClick={() => navigate('/painel/analise-corplaw')} className="mt-1 p-2 rounded-xl hover:bg-slate-100">
+          <button onClick={() => navigate('/painel/analise')} className="mt-1 p-2 rounded-xl hover:bg-slate-100">
             <ArrowLeft className="w-4 h-4 text-slate-400" />
           </button>
           <div>
@@ -202,7 +238,11 @@ export default function AnaliseCorplawDetail() {
               <Trash2 className="w-4 h-4" />
             </button>
           )}
-          <button onClick={handleExportHTML} className="flex items-center gap-2 bg-brand hover:bg-brand-light text-white px-3 py-2 rounded-xl text-sm font-medium shadow-sm">
+          <button onClick={handleExportPDF} disabled={exportingPDF} className="flex items-center gap-2 bg-brand hover:bg-brand-light disabled:opacity-60 text-white px-3 py-2 rounded-xl text-sm font-medium shadow-sm">
+            {exportingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+            {exportingPDF ? 'Gerando PDF...' : 'Exportar PDF'}
+          </button>
+          <button onClick={handleExportHTML} className="flex items-center gap-2 bg-white hover:bg-slate-50 text-brand border border-brand/30 px-3 py-2 rounded-xl text-sm font-medium shadow-sm">
             <Download className="w-4 h-4" /> Exportar HTML
           </button>
         </div>

@@ -20,18 +20,12 @@ import AuditLog from '@/pages/AuditLog'
 import EquipeInterna from '@/pages/EquipeInterna'
 import ClientesPlataforma from '@/pages/ClientesPlataforma'
 import ClienteDetalhe from '@/pages/ClienteDetalhe'
-import AnaliseCorplawList from '@/pages/painel/AnaliseCorplawList'
-import AnaliseCorplawNew from '@/pages/painel/AnaliseCorplawNew'
-import AnaliseCorplawDetail from '@/pages/painel/AnaliseCorplawDetail'
-import AnaliseHibridaList from '@/pages/painel/AnaliseHibridaList'
-import AnaliseHibridaNew from '@/pages/painel/AnaliseHibridaNew'
-import AnaliseHibridaDetail from '@/pages/painel/AnaliseHibridaDetail'
+import AnaliseList from '@/pages/painel/AnaliseList'
+import AnaliseNew from '@/pages/painel/AnaliseNew'
+import AnaliseDetail from '@/pages/painel/AnaliseDetail'
 import PlanoCliente from '@/pages/client/PlanoCliente'
 import CreditosCliente from '@/pages/client/CreditosCliente'
 import Profile from '@/pages/Profile'
-import ContractAnalysisList from '@/pages/ContractAnalysisList'
-import ContractAnalysisNew from '@/pages/ContractAnalysisNew'
-import ContractAnalysisDetail from '@/pages/ContractAnalysisDetail'
 import BancoProblemas from '@/pages/BancoProblemas'
 import Agenda from '@/pages/Agenda'
 import ClientHome from '@/pages/client/ClientHome'
@@ -122,15 +116,16 @@ function AppRoutes() {
         <Route path="/painel/agenda" element={<Agenda />} />
         <Route path="/painel/auditoria" element={<AdminRoute><AuditLog /></AdminRoute>} />
         <Route path="/painel/perfil" element={<Profile />} />
-        <Route path="/painel/analise" element={<ContractAnalysisList />} />
-        <Route path="/painel/analise/nova" element={<ContractAnalysisNew />} />
-        <Route path="/painel/analise/:id" element={<ContractAnalysisDetail />} />
-        <Route path="/painel/analise-corplaw" element={<AnaliseCorplawList />} />
-        <Route path="/painel/analise-corplaw/nova" element={<AnaliseCorplawNew />} />
-        <Route path="/painel/analise-corplaw/:id" element={<AnaliseCorplawDetail />} />
-        <Route path="/painel/analise-hibrida" element={<AnaliseHibridaList />} />
-        <Route path="/painel/analise-hibrida/nova" element={<AnaliseHibridaNew />} />
-        <Route path="/painel/analise-hibrida/:id" element={<AnaliseHibridaDetail />} />
+        <Route path="/painel/analise" element={<AnaliseList />} />
+        <Route path="/painel/analise/nova" element={<AnaliseNew />} />
+        <Route path="/painel/analise/:id" element={<AnaliseDetail />} />
+        {/* Redirects de URLs antigas para o único módulo (Corplaw) */}
+        <Route path="/painel/analise-corplaw" element={<Navigate to="/painel/analise" replace />} />
+        <Route path="/painel/analise-corplaw/nova" element={<Navigate to="/painel/analise/nova" replace />} />
+        <Route path="/painel/analise-corplaw/:id" element={<Navigate to="/painel/analise" replace />} />
+        <Route path="/painel/analise-hibrida" element={<Navigate to="/painel/analise" replace />} />
+        <Route path="/painel/analise-hibrida/nova" element={<Navigate to="/painel/analise/nova" replace />} />
+        <Route path="/painel/analise-hibrida/:id" element={<Navigate to="/painel/analise" replace />} />
         <Route path="/painel/banco-de-problemas" element={<BancoProblemas />} />
         <Route path="/painel/equipe-interna" element={<AdminRoute><EquipeInterna /></AdminRoute>} />
         <Route path="/painel/clientes-plataforma" element={<ClientesPlataforma />} />

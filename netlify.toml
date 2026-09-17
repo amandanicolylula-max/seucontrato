@@ -14,13 +14,7 @@
 [functions."daily-digest"]
   timeout = 30
 
-[functions."analyze-contract-background"]
-  timeout = 300
-
 [functions."analyze-corplaw-background"]
-  timeout = 900
-
-[functions."analyze-hibrida-background"]
   timeout = 900
 
 [functions."analyze-problem-background"]
@@ -34,20 +28,8 @@
   force = true
 
 [[redirects]]
-  from = "/api/analyze-contract"
-  to = "/.netlify/functions/analyze-contract-background"
-  status = 200
-  force = true
-
-[[redirects]]
   from = "/api/analyze-corplaw"
   to = "/.netlify/functions/analyze-corplaw-background"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/api/analyze-hibrida"
-  to = "/.netlify/functions/analyze-hibrida-background"
   status = 200
   force = true
 

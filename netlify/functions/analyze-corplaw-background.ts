@@ -1,10 +1,15 @@
-// Módulo B — análise Corplaw pura (portada dos colegas, adaptada para multi-tenant)
-// Background function do Netlify: até 15 min de execução.
-// Recebe { analysisId, mainFilePath, accessoryPaths?, briefing, effort }
-// Escreve resultado em contract_analyses (ai_sections + edited_sections),
-// status transicionado igual ao legacy (rascunho_estagiario ou rascunho).
+// Módulo Corplaw — análise única do sistema (após consolidação legacy+hibrido).
+// Fluxo em 2 etapas:
+//   (1) Haiku detecta {tipo_contrato, contraparte} do PDF principal (barato, ~$0.001)
+//   (2) Query em contract_problems por similaridade ampla → candidatos
+//   (3) Opus 5 recebe os candidatos junto do prompt e faz análise crítica caso a caso
+//       (não incorpora cegamente — só cita quando GENUINAMENTE aplicável)
+//
+// Background function do Netlify: até 15 min. Recebe { analysisId, mainFilePath,
+// accessoryPaths?, briefing, effort }. Escreve resultado em contract_analyses
+// (ai_sections + edited_sections + detected_context).
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import mammoth from 'mammoth'
 import { ANALISE_JSON_SCHEMA } from '../../src/lib/corplaw/analiseSchema.js'
@@ -12,8 +17,112 @@ import { normalizarNivel, CONFIG_PADRAO } from '../../src/lib/corplaw/esforco.js
 import type { Perspectiva } from '../../src/lib/corplaw/types.js'
 
 const MODELO = 'claude-opus-5'
+const MODELO_DETECCAO = 'claude-haiku-4-5-20251001'
 
-// ─── Prompt (portado exato dos colegas) ─────────────────────────────────────
+// ─── Detecção prévia (Haiku) ────────────────────────────────────────────────
+
+interface DetectedContext {
+  tipo_contrato: string | null
+  contraparte: string | null
+}
+
+const DETECT_SCHEMA = {
+  type: 'object',
+  properties: {
+    tipo_contrato: {
+      type: ['string', 'null'],
+      description: 'Tipo genérico do contrato (ex.: Prestação de Serviços, Fornecimento, Locação, Compra e Venda, Distribuição, NDA). null se não conseguir identificar.',
+    },
+    contraparte: {
+      type: ['string', 'null'],
+      description: 'Nome da contraparte principal (a parte com quem o cliente está contratando). null se não conseguir identificar.',
+    },
+  },
+  required: ['tipo_contrato', 'contraparte'],
+  additionalProperties: false,
+}
+
+async function detectContractContext(
+  client: Anthropic,
+  contentBlocks: Anthropic.ContentBlockParam[]
+): Promise<DetectedContext> {
+  try {
+    const resposta = await client.messages.create({
+      model: MODELO_DETECCAO,
+      max_tokens: 300,
+      messages: [{
+        role: 'user',
+        content: [
+          ...contentBlocks,
+          {
+            type: 'text',
+            text: 'Leia o documento e identifique: (1) tipo genérico do contrato; (2) nome da contraparte principal. Retorne SOMENTE JSON: {"tipo_contrato": "...", "contraparte": "..."}. Use null quando não conseguir identificar com segurança.',
+          },
+        ],
+      }],
+    })
+
+    const texto = resposta.content
+      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+      .map(b => b.text)
+      .join('')
+      .trim()
+
+    // Extrai o JSON (Haiku às vezes envolve em markdown)
+    const match = texto.match(/\{[\s\S]*\}/)
+    if (!match) return { tipo_contrato: null, contraparte: null }
+    const parsed = JSON.parse(match[0])
+    return {
+      tipo_contrato: typeof parsed.tipo_contrato === 'string' ? parsed.tipo_contrato : null,
+      contraparte: typeof parsed.contraparte === 'string' ? parsed.contraparte : null,
+    }
+  } catch (e) {
+    console.warn('detectContractContext falhou (segue sem enriquecimento):', (e as Error).message)
+    return { tipo_contrato: null, contraparte: null }
+  }
+}
+
+// ─── Busca candidatos no Banco de Problemas ─────────────────────────────────
+
+interface ProblemCandidate {
+  contract_type: string | null
+  counterparty_name: string | null
+  event_date: string | null
+  description: string
+  financial_impact: number | null
+  ai_recommendations: string | null
+  missing_clauses: unknown
+}
+
+async function fetchProblemCandidates(
+  supabase: SupabaseClient,
+  workspaceId: string | null,
+  ctx: DetectedContext
+): Promise<ProblemCandidate[]> {
+  if (!ctx.tipo_contrato && !ctx.contraparte) return []
+
+  const orFilters: string[] = []
+  if (ctx.tipo_contrato) orFilters.push(`contract_type.ilike.%${ctx.tipo_contrato}%`)
+  if (ctx.contraparte) orFilters.push(`counterparty_name.ilike.%${ctx.contraparte}%`)
+
+  let query = supabase
+    .from('contract_problems')
+    .select('contract_type, counterparty_name, event_date, description, financial_impact, ai_recommendations, missing_clauses')
+    .order('event_date', { ascending: false, nullsFirst: false })
+    .limit(20)
+
+  if (orFilters.length > 0) query = query.or(orFilters.join(','))
+  if (workspaceId) query = query.or(`workspace_id.is.null,workspace_id.eq.${workspaceId}`)
+
+  const { data, error } = await query
+  if (error) {
+    console.warn('fetchProblemCandidates erro:', error.message)
+    return []
+  }
+  return (data || []) as ProblemCandidate[]
+}
+
+// ─── Prompt ─────────────────────────────────────────────────────────────────
 
 const PERSPECTIVA_LABEL: Record<Perspectiva, string> = {
   escrito_pelo_cliente:
@@ -26,8 +135,43 @@ const PERSPECTIVA_LABEL: Record<Perspectiva, string> = {
     'O contrato JÁ ESTÁ ASSINADO E VIGENTE para o cliente — não dá mais para renegociar antes de assinar. O foco muda: (1) mapear os riscos aos quais a empresa JÁ está exposta hoje; (2) para cada risco, priorizar MEDIDAS ADMINISTRATIVAS DE PREVENÇÃO que o cliente pode adotar por conta própria, sem depender da outra parte (ex.: controles internos, rotinas, documentação, avisos formais, calendário de prazos); (3) quando um risco NÃO tiver solução administrativa possível, dizer isso claramente e recomendar buscar um ADITIVO contratual (ou orientação jurídica) — indicando qual ponto o aditivo precisaria corrigir. Deixe explícito, em cada recomendação, se ela é uma medida administrativa interna ou se exige aditivo/renegociação.',
 }
 
-function buildPrompt(negocio: string, perspectiva: Perspectiva, preocupacoes: string): string {
-  return `Você é um Analista de Contratos especializado em contratos cíveis e empresariais brasileiros.
+function formatCandidatos(candidates: ProblemCandidate[], ctx: DetectedContext): string {
+  const linhas = candidates.map((c, i) => {
+    const meta = [c.contract_type, c.counterparty_name, c.event_date].filter(Boolean).join(' / ')
+    const impacto = c.financial_impact ? ` — impacto: R$ ${Number(c.financial_impact).toLocaleString('pt-BR')}` : ''
+    const rec = c.ai_recommendations ? `\n     Recomendação registrada: ${c.ai_recommendations}` : ''
+    const clausulas = Array.isArray(c.missing_clauses) && c.missing_clauses.length > 0
+      ? `\n     Cláusulas ausentes: ${(c.missing_clauses as string[]).join('; ')}`
+      : ''
+    return `  ${i + 1}. [${meta}]${impacto}\n     ${c.description}${rec}${clausulas}`
+  }).join('\n')
+
+  const filtro = [
+    ctx.tipo_contrato ? `tipo="${ctx.tipo_contrato}"` : null,
+    ctx.contraparte ? `contraparte="${ctx.contraparte}"` : null,
+  ].filter(Boolean).join(' OU ')
+
+  return `
+
+CONHECIMENTO HISTÓRICO DO ESCRITÓRIO — PROBLEMAS POTENCIALMENTE RELEVANTES
+
+Os problemas abaixo foram registrados anteriormente pelo escritório em contratos com alguma similaridade (${filtro}). NÃO os incorpore automaticamente — o recorte por tipo/contraparte é amplo e pode não se aplicar ao caso específico.
+
+Sua tarefa: para CADA candidato abaixo, faça análise crítica de relevância pra ESTE contrato específico. Compare cláusulas, contexto de negócio, exposição financeira e circunstâncias. Cite apenas os que forem GENUINAMENTE aplicáveis — e, quando citar, faça-o no campo "cruzamento" ou "origem" do risco relacionado, mencionando explicitamente algo como "o escritório já enfrentou situação análoga: [descrição breve] — aqui o mesmo risco existe porque [razão específica deste contrato]". Se um problema histórico NÃO se aplica ao caso presente (ex.: cláusula diferente, contexto distinto, cenário improvável neste negócio), IGNORE-O sem mencionar. Não force a relevância pra parecer que aproveitou o histórico.
+
+CANDIDATOS:
+${linhas}
+`
+}
+
+function buildPrompt(
+  negocio: string,
+  perspectiva: Perspectiva,
+  preocupacoes: string,
+  candidates: ProblemCandidate[],
+  ctx: DetectedContext
+): string {
+  const base = `Você é um Analista de Contratos especializado em contratos cíveis e empresariais brasileiros.
 Apoie o cliente traduzindo linguagem jurídica em informações práticas. Você não é advogado e não presta assessoria jurídica formal.
 
 CONTEXTO DO CLIENTE:
@@ -51,6 +195,8 @@ OS RISCOS SÃO O CORAÇÃO DA ANÁLISE. Trate-os com destaque e de forma DIDÁTI
 Vá além do que está escrito: avalie lacunas, omissões, ambiguidades e o que o contrato deixa de prever. Se houver poucos riscos óbvios, investigue os riscos por OMISSÃO (cláusulas importantes que faltam).
 
 Ordene os riscos do mais grave ao menos grave. Máximo 5 recomendações prioritárias, em ordem crescente de urgência (1 = mais urgente). exposicao_brl é número inteiro em reais ou null.`
+
+  return candidates.length > 0 ? base + formatCandidatos(candidates, ctx) : base
 }
 
 // ─── Handler ────────────────────────────────────────────────────────────────
@@ -80,7 +226,6 @@ export const handler = async (event: { body: string }) => {
     const supabase = createClient(supabaseUrl, serviceKey)
 
     if (!apiKey) {
-      // Sem API key — grava um erro para não travar processando pra sempre
       await supabase
         .from('contract_analyses')
         .update({ status: 'falhou', updated_at: new Date().toISOString() })
@@ -88,12 +233,14 @@ export const handler = async (event: { body: string }) => {
       return { statusCode: 500, body: 'ANTHROPIC_API_KEY ausente' }
     }
 
-    // Determina o autor (para status inicial)
+    // Determina o autor (para status inicial) e workspace_id
     const { data: analysisRow } = await supabase
       .from('contract_analyses')
-      .select('created_by')
+      .select('created_by, workspace_id')
       .eq('id', analysisId)
       .single()
+
+    const workspaceId: string | null = analysisRow?.workspace_id || null
 
     let initialStatus = 'rascunho'
     let reviewerId: string | null = null
@@ -110,22 +257,29 @@ export const handler = async (event: { body: string }) => {
     }
 
     // ── Download files from storage ────────────────────────────────────
-    const contentBlocks: Anthropic.ContentBlockParam[] = []
-
-    contentBlocks.push(...(await prepareContentFromStorage(supabase, mainFilePath, false)))
+    const mainBlocks = await prepareContentFromStorage(supabase, mainFilePath, false)
+    const accessoryBlocks: Anthropic.ContentBlockParam[] = []
     for (const p of accessoryPaths) {
-      contentBlocks.push(...(await prepareContentFromStorage(supabase, p, true)))
+      accessoryBlocks.push(...(await prepareContentFromStorage(supabase, p, true)))
     }
 
-    contentBlocks.push({ type: 'text', text: buildPrompt(negocio, perspectiva, preocupacoes) })
-
-    // ── Anthropic call ─────────────────────────────────────────────────
     const client = new Anthropic({ apiKey })
+
+    // ── Etapa 1: Detecção prévia (Haiku) ───────────────────────────────
+    const ctx = await detectContractContext(client, mainBlocks)
+
+    // ── Etapa 2: Busca candidatos no Banco de Problemas ────────────────
+    const candidates = await fetchProblemCandidates(supabase, workspaceId, ctx)
+
+    // ── Etapa 3: Análise principal (Opus 5) ────────────────────────────
+    const contentBlocks: Anthropic.ContentBlockParam[] = [
+      ...mainBlocks,
+      ...accessoryBlocks,
+      { type: 'text', text: buildPrompt(negocio, perspectiva, preocupacoes, candidates, ctx) },
+    ]
 
     const stream = client.messages.stream({
       model: MODELO,
-      // Opus 5 permite até 64k tokens de output; deixamos alto pra não cortar
-      // JSON no meio quando effort=max/xhigh (thinking consome tokens também).
       max_tokens: 64000,
       thinking: { type: 'adaptive' },
       output_config: {
@@ -147,7 +301,7 @@ export const handler = async (event: { body: string }) => {
     if (resposta.stop_reason === 'max_tokens') {
       throw new Error(
         `Resposta cortada no limite de tokens (${resposta.usage?.output_tokens || '?'} tokens gerados). ` +
-        `Reduza o effort (max→high) ou tente novamente. O contrato pode ser longo demais pra structured output no effort atual.`
+        `Reduza o effort (max→high) ou tente novamente.`
       )
     }
 
@@ -164,24 +318,27 @@ export const handler = async (event: { body: string }) => {
       analise = JSON.parse(textoResposta)
     } catch (e) {
       throw new Error(
-        `Falha ao parsear JSON da resposta (${textoResposta.length} chars, stop_reason=${resposta.stop_reason}). ` +
+        `Falha ao parsear JSON (${textoResposta.length} chars, stop_reason=${resposta.stop_reason}). ` +
         `Trecho final: "${textoResposta.slice(-200)}". Erro: ${(e as Error).message}`
       )
     }
 
-    // Mapeia gravidade máxima para nosso campo risk_level (para filtros existentes)
     const gravidadeMax = analise.riscos?.reduce((max: string, r: { gravidade: string }) => {
       const rank: Record<string, number> = { CRÍTICO: 4, ALTO: 3, MÉDIO: 2, BAIXO: 1 }
       return (rank[r.gravidade] || 0) > (rank[max] || 0) ? r.gravidade : max
     }, 'BAIXO') || 'BAIXO'
     const riskLevel = gravidadeMax === 'CRÍTICO' || gravidadeMax === 'ALTO' ? 'alto' : gravidadeMax === 'MÉDIO' ? 'medio' : 'baixo'
 
-    // ── Save result ────────────────────────────────────────────────────
     await supabase
       .from('contract_analyses')
       .update({
         ai_sections: analise,
         edited_sections: analise,
+        detected_context: {
+          tipo_contrato: ctx.tipo_contrato,
+          contraparte: ctx.contraparte,
+          candidatos_encontrados: candidates.length,
+        },
         status: initialStatus,
         risk_level: riskLevel,
         reviewer_id: reviewerId,
@@ -189,7 +346,7 @@ export const handler = async (event: { body: string }) => {
       })
       .eq('id', analysisId)
 
-    // Cleanup: remove PDFs temporários do storage
+    // Cleanup PDFs temporários
     const allPaths = [mainFilePath, ...accessoryPaths]
     await supabase.storage.from('analyses').remove(allPaths).catch(() => {})
 
@@ -200,7 +357,6 @@ export const handler = async (event: { body: string }) => {
     if (analysisId) {
       try {
         const supabase = createClient(supabaseUrl, serviceKey)
-        // Grava erro no ai_sections como diagnóstico (temporário — remover depois de debugado)
         await supabase
           .from('contract_analyses')
           .update({
@@ -218,7 +374,7 @@ export const handler = async (event: { body: string }) => {
 // ─── Prepare content from Supabase Storage ──────────────────────────────────
 
 async function prepareContentFromStorage(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   filePath: string,
   isAccessory: boolean
 ): Promise<Anthropic.ContentBlockParam[]> {

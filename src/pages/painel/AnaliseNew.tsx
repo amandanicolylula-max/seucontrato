@@ -76,7 +76,7 @@ export default function AnaliseCorplawNew() {
           const status = (payload.new as { status: string }).status
           if (['rascunho', 'rascunho_estagiario', 'finalizado'].includes(status)) {
             cleanup()
-            navigate(`/painel/analise-corplaw/${analysisId}`)
+            navigate(`/painel/analise/${analysisId}`)
           } else if (status === 'falhou') {
             cleanup()
             setProcessing(false)
