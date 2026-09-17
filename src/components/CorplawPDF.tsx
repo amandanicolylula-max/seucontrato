@@ -306,13 +306,15 @@ interface Props {
   clientName?: string
   createdAt?: string
   analise: AnaliseDocumento
+  /** Se false, renderiza sem o timbrado (fallback de emergência). */
+  withImage?: boolean
 }
 
-export default function CorplawPDF({ title, clientName, createdAt, analise }: Props) {
+export default function CorplawPDF({ title, clientName, createdAt, analise, withImage = true }: Props) {
   return (
     <Document title={`Parecer — ${title}`} author="CorpLaw Advogados">
       <Page size="A4" style={styles.page} wrap>
-        <Image src={TIMBRADO_CORPLAW} style={styles.bg} fixed />
+        {withImage && <Image src={TIMBRADO_CORPLAW} style={styles.bg} fixed />}
         <View style={styles.content}>
           {/* Cabeçalho — só aparece na primeira página */}
           <Text style={styles.title}>Parecer Contratual</Text>

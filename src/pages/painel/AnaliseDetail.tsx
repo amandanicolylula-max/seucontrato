@@ -146,7 +146,7 @@ export default function AnaliseCorplawDetail() {
     if (!analise) { toast.error('Sem dados de análise para exportar'); return }
     setExportingPDF(true)
     const worker = new Worker(new URL('../../workers/corplaw-pdf.worker.ts', import.meta.url), { type: 'module' })
-    worker.onmessage = (e: MessageEvent<{ success: boolean; buffer?: ArrayBuffer; error?: string }>) => {
+    worker.onmessage = (e: MessageEvent<{ success: boolean; buffer?: ArrayBuffer; error?: string; degraded?: boolean; firstError?: string }>) => {
       if (e.data.success && e.data.buffer) {
         const blob = new Blob([e.data.buffer], { type: 'application/pdf' })
         const url = URL.createObjectURL(blob)
@@ -155,9 +155,15 @@ export default function AnaliseCorplawDetail() {
         a.download = `Parecer-${analysis.title.replace(/\s+/g, '-')}.pdf`
         a.click()
         URL.revokeObjectURL(url)
-        toast.success('PDF gerado!')
+        if (e.data.degraded) {
+          console.warn('[PDF] Timbrado omitido — erro original:', e.data.firstError)
+          toast('PDF gerado sem timbrado (bug conhecido — reportado)', { icon: '⚠️', duration: 5000 })
+        } else {
+          toast.success('PDF gerado!')
+        }
       } else {
-        toast.error('Falha ao gerar PDF: ' + (e.data.error || 'erro desconhecido'))
+        console.error('[PDF] Falha total:', e.data.error)
+        toast.error('Falha ao gerar PDF (veja console para detalhes)', { duration: 6000 })
       }
       setExportingPDF(false)
       worker.terminate()
