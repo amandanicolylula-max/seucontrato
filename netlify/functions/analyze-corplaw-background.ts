@@ -178,13 +178,19 @@ export const handler = async (event: { body: string }) => {
 
     return { statusCode: 200, body: JSON.stringify({ success: true }) }
   } catch (err) {
-    console.error('analyze-corplaw error:', err)
+    const errMsg = err instanceof Error ? (err.stack || err.message) : String(err)
+    console.error('analyze-corplaw error:', errMsg)
     if (analysisId) {
       try {
         const supabase = createClient(supabaseUrl, serviceKey)
+        // Grava erro no ai_sections como diagnóstico (temporário — remover depois de debugado)
         await supabase
           .from('contract_analyses')
-          .update({ status: 'falhou', updated_at: new Date().toISOString() })
+          .update({
+            status: 'falhou',
+            ai_sections: { __debug_error: errMsg.slice(0, 4000) },
+            updated_at: new Date().toISOString(),
+          })
           .eq('id', analysisId)
       } catch { /* ignore */ }
     }
