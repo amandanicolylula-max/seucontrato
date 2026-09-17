@@ -4,20 +4,19 @@
 // transbordar cabeçalho/rodapé do timbrado. Só use wrap={false} em elementos
 // pequenos e coesos (badge, header curto que deve ficar junto do próximo bloco).
 
-import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 import type { AnaliseDocumento, RiscoDetalhado, Gravidade } from '@/lib/corplaw/types'
 import { TIMBRADO_CORPLAW } from '@/assets/corplaw-timbrado'
 
-// Registrar fonte confortável (opcional — fallback Helvetica se falhar)
-try {
-  Font.register({
-    family: 'Inter',
-    fonts: [
-      { src: 'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2' },
-      { src: 'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMa2JL7SUc.woff2', fontWeight: 'bold' },
-    ],
-  })
-} catch { /* ignore — fallback pra Helvetica */ }
+// Sanitiza número para evitar erro "unsupported number" do Yoga (@react-pdf).
+// A IA às vezes retorna exposicao_brl em notação científica ou fora do range int32.
+function safeMoney(v: number | null | undefined): string | null {
+  if (v == null) return null
+  const n = Number(v)
+  if (!Number.isFinite(n)) return null
+  const clamped = Math.max(-1e15, Math.min(1e15, Math.round(n)))
+  return clamped.toLocaleString('pt-BR')
+}
 
 const COLORS = {
   navy: '#0f2137',
@@ -250,9 +249,9 @@ function Risco({ r }: { r: RiscoDetalhado }) {
         <Text style={styles.riscoMetaItem}>Probabilidade: {r.probabilidade}</Text>
         <Text style={styles.riscoMetaItem}>Impacto: {r.impacto}</Text>
         <Text style={styles.riscoMetaItem}>Tipo: {r.tipo}</Text>
-        {r.exposicao_brl != null && (
+        {safeMoney(r.exposicao_brl) && (
           <Text style={styles.riscoMetaItem}>
-            Exposição: R$ {Number(r.exposicao_brl).toLocaleString('pt-BR')}
+            Exposição: R$ {safeMoney(r.exposicao_brl)}
           </Text>
         )}
       </View>
@@ -400,8 +399,8 @@ export default function CorplawPDF({ title, clientName, createdAt, analise }: Pr
             <View style={styles.section} break>
               <Text style={styles.sectionTitle}>
                 Riscos identificados ({analise.riscos.length})
-                {analise.exposicao_total_brl != null &&
-                  ` — Exposição total estimada: R$ ${Number(analise.exposicao_total_brl).toLocaleString('pt-BR')}`}
+                {safeMoney(analise.exposicao_total_brl) &&
+                  ` — Exposição total estimada: R$ ${safeMoney(analise.exposicao_total_brl)}`}
               </Text>
               {analise.riscos.map((r, i) => (
                 <Risco key={r.codigo || i} r={r} />

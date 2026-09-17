@@ -192,7 +192,11 @@ export default function AnaliseCorplawDetail() {
       <div className="max-w-lg mx-auto py-24 text-center">
         <Loader2 className="w-12 h-12 text-accent animate-spin mx-auto mb-4" />
         <p className="text-lg font-semibold text-slate-800">Analista de Contratos processando...</p>
-        <p className="text-slate-500 text-sm mt-1">Análise rica com Opus 5 pode levar 1-3 minutos.</p>
+        <p className="text-slate-500 text-sm mt-1">Análise rica com Opus 5 leva de 5 a 10 minutos (contratos complexos podem chegar a 15 min).</p>
+        <div className="mt-6 mx-auto max-w-sm bg-accent/5 border border-accent/20 rounded-xl p-4 text-left">
+          <p className="text-sm font-medium text-navy-900">Pode sair desta tela tranquilamente.</p>
+          <p className="text-xs text-slate-600 mt-1">O processamento continua no servidor. Você pode reabrir esta análise a qualquer momento em <span className="font-semibold">Análises</span> — o resultado aparece automaticamente quando ficar pronto.</p>
+        </div>
       </div>
     )
   }

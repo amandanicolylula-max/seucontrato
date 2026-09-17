@@ -157,8 +157,12 @@ export default function AnaliseCorplawNew() {
         </div>
         <div>
           <p className="text-lg font-semibold text-slate-800">Analista de Contratos processando…</p>
-          <p className="text-slate-500 text-sm mt-1">Análise rica com Opus 5 leva 1-3 minutos.</p>
+          <p className="text-slate-500 text-sm mt-1">Análise rica com Opus 5 leva de 5 a 10 minutos (contratos complexos podem chegar a 15 min).</p>
           <p className="text-slate-400 text-xs mt-3">{elapsed}s decorridos</p>
+        </div>
+        <div className="max-w-sm bg-accent/5 border border-accent/20 rounded-xl p-4 text-left">
+          <p className="text-sm font-medium text-navy-900">Pode sair desta tela tranquilamente.</p>
+          <p className="text-xs text-slate-600 mt-1">O processamento continua no servidor. Você não perde nada — o resultado aparece na sua lista de <span className="font-semibold">Análises</span> assim que ficar pronto.</p>
         </div>
       </div>
     )
